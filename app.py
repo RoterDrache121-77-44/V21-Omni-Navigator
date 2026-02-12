@@ -4,7 +4,7 @@ import datetime
 import os
 
 # ==============================================================================
-# 1. CORE LOGIK (Crash-Sicher & Alles Integriert)
+# 1. CORE LOGIK (Crash-Sicher & Monolith)
 # ==============================================================================
 class MathEngine:
     ANCHOR_DATE = datetime.date(1986, 5, 19)
@@ -12,21 +12,25 @@ class MathEngine:
     @staticmethod
     def get_kin(d, m, y):
         if m == 2 and d == 29: return 0
-        target, current = datetime.date(y, m, d), MathEngine.ANCHOR_DATE
-        days = 0
-        if target >= current:
-            while current < target:
-                if not (current.month == 2 and current.day == 29): days += 1
-                current += datetime.timedelta(days=1)
-            return (MathEngine.ANCHOR_KIN + days - 1) % 260 + 1
-        else:
-            while current > target:
-                current -= datetime.timedelta(days=1)
-                if not (current.month == 2 and current.day == 29): days += 1
-            return (MathEngine.ANCHOR_KIN - days - 1) % 260 + 1
+        try:
+            target = datetime.date(y, m, d)
+            current = MathEngine.ANCHOR_DATE
+            days = 0
+            if target >= current:
+                while current < target:
+                    if not (current.month == 2 and current.day == 29): days += 1
+                    current += datetime.timedelta(days=1)
+                return (MathEngine.ANCHOR_KIN + days - 1) % 260 + 1
+            else:
+                while current > target:
+                    current -= datetime.timedelta(days=1)
+                    if not (current.month == 2 and current.day == 29): days += 1
+                return (MathEngine.ANCHOR_KIN - days - 1) % 260 + 1
+        except: return 1 # Fallback
 
     @staticmethod
     def get_oracle_ids(kin):
+        if kin <= 0: return None
         s_id = (kin - 1) % 20 + 1
         t_id = (kin - 1) % 13 + 1
         analog = (19 - (s_id - 1)) % 20 + 1
@@ -41,34 +45,36 @@ class MathEngine:
 
 @st.cache_data
 def load_db():
-    # Intelligente Suche nach der JSON Datei
-    possible_files = [f for f in os.listdir('.') if f.endswith('.json') and 'tzolkin' in f]
-    if not possible_files: return []
-    # Nimm die erste gefundene Datei (wahrscheinlich deine enriched DB)
-    path = possible_files[0]
+    # DIAGNOSE: Suche nach der JSON-Datei
+    files = [f for f in os.listdir('.') if f.endswith('.json')]
+    # Wir suchen eine Datei die "tzolkin" im Namen hat, oder nehmen die erste JSON
+    target = 'db_tzolkin_v21_enriched_FINAL.json'
+    
+    if target in files:
+        path = target
+    elif len(files) > 0:
+        path = files[0] # Nimm die erste gefundene Datei als Fallback
+    else:
+        return None # Keine Datei gefunden
+
     try:
-        with open(path, 'r', encoding='utf-8') as f: return json.load(f)
-    except: return []
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except: return None
 
 DB_TZ = load_db()
 
 def safe_get(data, path, default="-"):
-    """Holt Daten sicher aus verschachtelten Dictionaries"""
     curr = data
     try:
         for key in path:
-            if isinstance(curr, dict):
-                curr = curr.get(key, {})
-            else:
-                return default
-        # Wenn am Ende ein leeres Dict oder None steht, gib default zurück (außer bei False/0)
-        if curr is None or (isinstance(curr, dict) and not curr) and curr is not False: 
-            return default
-        return curr
+            if isinstance(curr, dict): curr = curr.get(key, {})
+            else: return default
+        return curr if curr not in [None, {}, ""] else default
     except: return default
 
 def get_v21_data(kin):
-    if kin == 0 or not DB_TZ: return None
+    if kin <= 0 or not DB_TZ: return None
     k_dat = next((k for k in DB_TZ if k.get('kin') == kin), None)
     if not k_dat: return None
     
@@ -81,7 +87,6 @@ def get_v21_data(kin):
     elif 120 <= kin <= 184: sea = ("Gelbe Sonne", "Gelb")
     else: sea = ("Weißer Hund", "Weiß")
 
-    # Wir nutzen safe_get für ALLES, was abstürzen könnte
     return {
         "kin": kin,
         "name": safe_get(k_dat, ['identity', 'name']),
@@ -89,111 +94,84 @@ def get_v21_data(kin):
         "color": safe_get(k_dat, ['identity', 'seal', 'color'], "Weiß"),
         "tone": safe_get(k_dat, ['identity', 'tone', 'name']),
         "h": {"idx": h_idx, "p": (kin-1)%4 + 1, "c": ["Rot", "Weiß", "Blau", "Gelb"][(h_idx-1)%4]},
-        "c": {"p": c_pos, "c": c_col}, "s": {"n": sea[0], "c": sea[1]},
+        "c": {"p": c_pos, "c": c_color}, "s": {"n": sea[0], "c": sea[1]},
         "w": {"n": safe_get(k_dat, ['time', 'wavespell']), "c": safe_get(k_dat, ['identity', 'seal', 'color'])},
         "gap": safe_get(k_dat, ['time', 'gap'], False)
     }
 
 # ==============================================================================
-# 2. DESIGN & INTERFACE (Mobile Friendly)
+# 2. UI & DESIGN (Mobile First)
 # ==============================================================================
-st.set_page_config(page_title="V21", layout="wide")
+st.set_page_config(page_title="V21 STATION", layout="wide")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #000000; color: #E0E0E0; font-family: sans-serif; }
-    
-    /* Box-Design für Handy optimiert */
+    .stApp { background-color: #000; color: #eee; font-family: sans-serif; }
     .glow-box { 
         background: #111; border: 1px solid #333; padding: 12px; 
         border-radius: 8px; text-align: center; margin-bottom: 8px;
     }
-    
-    /* Glow Farben - dickerer Rand links für bessere Sichtbarkeit */
-    .Rot { border-left: 4px solid #FF3E3E; }
-    .Weiß { border-left: 4px solid #FFFFFF; }
-    .Blau { border-left: 4px solid #3E8EFF; }
-    .Gelb { border-left: 4px solid #FFD700; }
-    
-    .label { color: #888; font-size: 0.7em; text-transform: uppercase; letter-spacing: 1px; display:block; margin-bottom:4px;}
-    .val-big { font-size: 1.2em; font-weight: bold; color: #fff; }
+    .Rot { border-left: 5px solid #FF3E3E; }
+    .Weiß { border-left: 5px solid #FFFFFF; }
+    .Blau { border-left: 5px solid #3E8EFF; }
+    .Gelb { border-left: 5px solid #FFD700; }
+    .label { color: #888; font-size: 0.7em; text-transform: uppercase; display: block; }
+    .val { font-size: 1.2em; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
-# Sidebar
 with st.sidebar:
-    st.header("🛸 CONTROL")
+    st.header("🛸 SETTINGS")
     d_in = st.date_input("Datum:", datetime.date.today())
     kn = MathEngine.get_kin(d_in.day, d_in.month, d_in.year)
+
+# ------------------------------------------------------------------------------
+# DIAGNOSE-CHECK (Verhindert den Absturz)
+# ------------------------------------------------------------------------------
+if DB_TZ is None:
+    st.error("❌ FEHLER: Die Datenbank-Datei (.json) wurde nicht gefunden!")
+    st.info("Bitte lade die Datei 'db_tzolkin_v21_enriched_FINAL.json' bei GitHub hoch.")
+    st.stop() # Stoppt hier, damit nichts abstürzt
 
 if kn != 0:
     d = get_v21_data(kn)
     
-    # Kompakter Header
-    st.markdown(f"<div style='text-align:center; margin-bottom:10px;'><h1>KIN {d['kin']}</h1><div style='color:#ccc'>{d['name']}</div></div>", unsafe_allow_html=True)
-    
-    if d['gap']:
-        st.info("⚡ PORTAL TAG AKTIV")
-
-    tab1, tab2 = st.tabs(["🧬 NAVIGATOR", "🔮 ORAKEL"])
-
-    with tab1:
-        # Stapel-Layout für Handy (Container statt Spalten wo möglich)
-        c1, c2 = st.columns(2)
-        with c1:
-            st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Siegel</span><span class='val-big'>{d['seal']}</span><br><span style='font-size:0.8em'>{d['tone']}</span></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='glow-box {d['h']['c']}'><span class='label'>Harmonik</span><span class='val-big'>Takt {d['h']['p']}/4</span></div>", unsafe_allow_html=True)
-        with c2:
-            st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Welle</span><span class='val-big'>{d['w']['n']}</span></div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='glow-box {d['s']['c']}'><span class='label'>Season</span><span class='val-big'>{d['s']['n']}</span></div>", unsafe_allow_html=True)
-
-    with tab2:
-        o_ids = MathEngine.get_oracle_ids(kn)
+    # TITAN-CHECK: Sind die Daten wirklich da?
+    if d: 
+        st.markdown(f"<div style='text-align:center;'><h1>KIN {d['kin']}</h1><p>{d['name']}</p></div>", unsafe_allow_html=True)
         
-        def render_o(role, k_nr):
-            obj = next((k for k in DB_TZ if k.get('kin') == k_nr), None)
-            if not obj: return
-            
-            # Sicheres Laden aller Werte
-            col = safe_get(obj, ['identity', 'seal', 'color'], "Weiß")
-            name = safe_get(obj, ['identity', 'name'])
-            tone = safe_get(obj, ['identity', 'tone', 'name'])
-            seal = safe_get(obj, ['identity', 'seal', 'name'])
-            
-            # Versuch verschiedene Keys für "Kraft" zu finden
-            id_data = obj.get('identity', {}).get('seal', {})
-            # Suche nach 'power', 'action' oder 'essence'. Wenn nichts da, nimm '-'
-            power = id_data.get('power') or id_data.get('action') or id_data.get('essence') or "-"
+        if d.get('gap'):
+            st.warning("⚡ GALAKTISCHES PORTAL AKTIV")
 
-            # Karte
-            st.markdown(f"""
-            <div class='glow-box {col}'>
-                <span class='label'>{role}</span>
-                <span style='font-weight:bold; font-size:1.1em;'>KIN {k_nr}</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # Dropdown
-            with st.expander(f"Details anzeigen"):
-                st.write(f"**Name:** {name}")
-                st.write(f"**Ton:** {tone}")
-                st.write(f"**Siegel:** {seal}")
-                st.write(f"**Kraft:** {power}")
+        t1, t2 = st.tabs(["🧬 NAVIGATOR", "🔮 ORAKEL"])
 
-        # Orakel Layout (Handy-Optimiert: Untereinander)
-        st.markdown("### 👑 FÜHRUNG")
-        render_o("GUIDE", o_ids['guide'])
-        
-        st.markdown("### ⚡ ENERGIE-FELD")
-        c_a, c_b = st.columns(2)
-        with c_a: render_o("ANTIPODE", o_ids['anti'])
-        with c_b: render_o("ANALOG", o_ids['analog'])
-            
-        st.markdown("### 🌟 ZENTRUM")
-        render_o("DEIN KIN", kn)
-        
-        st.markdown("### 🗝️ OCCULT")
-        render_o("OCCULT", o_ids['occult'])
+        with t1:
+            c1, c2 = st.columns(2)
+            with c1:
+                st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Siegel</span><span class='val'>{d['seal']}</span><br>{d['tone']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='glow-box {d['h']['c']}'><span class='label'>Harmonik</span><span class='val'>Takt {d['h']['p']}/4</span></div>", unsafe_allow_html=True)
+            with c2:
+                st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Welle</span><span class='val'>{d['w']['n']}</span></div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='glow-box {d['s']['c']}'><span class='label'>Season</span><span class='val'>{d['s']['n']}</span></div>", unsafe_allow_html=True)
 
+        with t2:
+            o_ids = MathEngine.get_oracle_ids(kn)
+            def render_o(role, knr):
+                obj = next((k for k in DB_TZ if k.get('kin') == knr), None)
+                if not obj: return
+                col = safe_get(obj, ['identity', 'seal', 'color'], "Weiß")
+                st.markdown(f"<div class='glow-box {col}'><span class='label'>{role}</span><span class='val'>KIN {knr}</span></div>", unsafe_allow_html=True)
+                with st.expander("Details"):
+                    st.write(f"**Name:** {safe_get(obj, ['identity', 'name'])}")
+                    st.write(f"**Siegel:** {safe_get(obj, ['identity', 'seal', 'name'])}")
+            
+            render_o("GUIDE", o_ids['guide'])
+            c_a, c_b = st.columns(2)
+            with c_a: render_o("ANTIPODE", o_ids['anti'])
+            with c_b: render_o("ANALOG", o_ids['analog'])
+            render_o("ZENTRUM", kn)
+            render_o("OCCULT", o_ids['occult'])
+    else:
+        st.error("Daten-Fehler: Das KIN konnte in der Datenbank nicht gefunden werden.")
 else:
     st.title("🟢 HUNAB KU")
