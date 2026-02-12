@@ -4,9 +4,10 @@ import datetime
 import os
 import importlib.util
 import sys
+import inspect
 
 # ==============================================================================
-# 1. DAS GEHIRN (MathEngine & DB) - Bleibt fest im Kern
+# 1. DAS GEHIRN (MathEngine & DB)
 # ==============================================================================
 class MathEngine:
     ANCHOR_DATE = datetime.date(1986, 5, 19)
@@ -47,117 +48,180 @@ def get_base_data(kin):
     return next((k for k in DB_TZ if k.get('kin') == kin), None)
 
 # ==============================================================================
-# 2. DIE PLUGIN-LOGIK (Der "Suchtrupp")
+# 2. DER INTELLIGENTE SUCHTRUPP (Module Loader)
 # ==============================================================================
 def load_modules():
-    """Scannt das Verzeichnis nach Dateien, die mit 'mod_' beginnen."""
+    """Scannt Ordner, lädt Module und gibt sie als Dictionary zurück."""
     modules = {}
-    # Wir suchen im aktuellen Ordner
     files = [f for f in os.listdir('.') if f.startswith('mod_') and f.endswith('.py')]
     
     for filename in files:
-        module_name = filename[:-3] # .py entfernen
+        module_key = filename[:-3] # Dateiname ohne .py
         try:
-            spec = importlib.util.spec_from_file_location(module_name, filename)
+            spec = importlib.util.spec_from_file_location(module_key, filename)
             mod = importlib.util.module_from_spec(spec)
-            sys.modules[module_name] = mod
+            sys.modules[module_key] = mod
             spec.loader.exec_module(mod)
             
-            # Check: Hat das Modul die nötigen Funktionen?
             if hasattr(mod, 'get_name') and hasattr(mod, 'render'):
-                # Erfolgreich geladen
                 display_name = mod.get_name()
-                modules[module_name] = {"name": display_name, "ref": mod}
+                # Wir speichern Referenz und Display-Name
+                modules[display_name] = {"ref": mod, "key": module_key}
         except Exception as e:
-            st.sidebar.error(f"Fehler beim Laden von {filename}: {e}")
+            st.sidebar.error(f"Fehler in {filename}: {e}")
             
     return modules
 
 # ==============================================================================
-# 3. UI SETUP (Globales Design)
+# 3. MYSTICAL UI DESIGN (CSS V22)
 # ==============================================================================
-st.set_page_config(page_title="V21 MAINBOARD", layout="wide", page_icon="🛸")
+st.set_page_config(page_title="V22 OMNI", layout="wide", page_icon="🛸")
 
 st.markdown("""
     <style>
-    /* Globaler Darkmode & Font */
-    .stApp { background-color: #000000; color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
-    
-    /* Die Standard Glow-Box (Module können das nutzen) */
-    .glow-box { 
-        background: #111; border: 1px solid #333; padding: 15px; 
-        border-radius: 12px; text-align: center; margin-bottom: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    /* 1. HINTERGRUND: Deep Space Gradient */
+    .stApp { 
+        background: radial-gradient(circle at 50% 10%, #1a1a1e 0%, #000000 90%);
+        color: #E0E0E0; 
+        font-family: 'Helvetica Neue', sans-serif; 
     }
     
-    /* Farb-Klassen für CSS Injektion */
-    .Rot { border-left: 4px solid #FF3E3E; }
-    .Weiß { border-left: 4px solid #FFFFFF; }
-    .Blau { border-left: 4px solid #3E8EFF; }
-    .Gelb { border-left: 4px solid #FFD700; }
+    /* 2. GLOW BOXEN: Eleganter & Subtiler */
+    .glow-box { 
+        background: rgba(18, 18, 18, 0.7); /* Leicht transparent */
+        border: 1px solid #333; 
+        backdrop-filter: blur(10px); /* Milchglas-Effekt */
+        padding: 15px; 
+        border-radius: 12px; 
+        text-align: center; 
+        margin-bottom: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        transition: transform 0.2s;
+    }
+    .glow-box:hover {
+        border-color: #555;
+    }
     
-    h1, h2, h3 { color: #fff; font-weight: 300; }
-    .highlight { color: #00FFA3; font-weight: bold; }
+    /* 3. TYPOGRAFIE */
+    h1 { 
+        font-weight: 200; 
+        letter-spacing: 2px; 
+        text-transform: uppercase; 
+        background: -webkit-linear-gradient(#eee, #333);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0px;
+    }
+    h2, h3 { color: #ccc; font-weight: 300; letter-spacing: 1px; }
+    
+    /* 4. FARB-AKZENTE (Leuchtend) */
+    .Rot { border-left: 3px solid #FF3E3E; box-shadow: -5px 0 15px -5px rgba(255, 62, 62, 0.2); }
+    .Weiß { border-left: 3px solid #FFFFFF; box-shadow: -5px 0 15px -5px rgba(255, 255, 255, 0.2); }
+    .Blau { border-left: 3px solid #3E8EFF; box-shadow: -5px 0 15px -5px rgba(62, 142, 255, 0.2); }
+    .Gelb { border-left: 3px solid #FFD700; box-shadow: -5px 0 15px -5px rgba(255, 215, 0, 0.2); }
+    .Grün { border-left: 3px solid #00FF00; box-shadow: -5px 0 15px -5px rgba(0, 255, 0, 0.2); }
+    
+    /* 5. SIDEBAR */
+    section[data-testid="stSidebar"] {
+        background-color: #050505;
+        border-right: 1px solid #222;
+    }
     </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# 4. MAIN PROGRAMM
+# 4. HAUPT-PROGRAMM
 # ==============================================================================
 
-# A. Header & Kontrolle
+# A. SIDEBAR & KONTROLLE
 with st.sidebar:
-    st.header("🛸 V21 SYSTEM")
+    st.header("🛸 CONTROL")
+    # Zeit-Vektor
     d_in = st.date_input("Zeit-Vektor:", datetime.date.today())
     kin_nr = MathEngine.get_kin(d_in.day, d_in.month, d_in.year)
     
-    st.divider()
-    st.caption("MODULE MANAGER")
+    st.markdown("---")
+    st.caption("MODULE STREAM")
     
-    # B. Suchtrupp losschicken
-    available_modules = load_modules()
-    active_modules = []
+    # B. MODULE LADEN & SORTIEREN
+    available_map = load_modules()
     
-    if not available_modules:
-        st.warning("Keine Module gefunden! Lade Dateien hoch, die mit 'mod_' beginnen.")
+    if not available_map:
+        st.warning("System leer. Bitte 'mod_' Dateien hochladen.")
+        selected_names = []
     else:
-        # Erstelle Checkboxen für jedes gefundene Modul
-        for mod_key, info in available_modules.items():
-            # Standardmäßig aktiviert
-            if st.checkbox(info['name'], value=True, key=mod_key):
-                active_modules.append(info['ref'])
+        # Sortier-Liste erstellen
+        all_names = list(available_map.keys())
+        # Multiselect erlaubt Auswahl UND Reihenfolge
+        selected_names = st.multiselect(
+            "Anzeige wählen:", 
+            options=all_names, 
+            default=all_names
+        )
 
-# C. Rendering (Der unendliche Stream)
+# C. RENDERING (DER STREAM)
 if DB_TZ is None:
-    st.error("⚠️ Datenbank fehlt (JSON).")
+    st.error("❌ Datenbank fehlt. Bitte JSON hochladen.")
     st.stop()
 
 if kin_nr == 0:
     st.title("🟢 HUNAB KU")
-    st.write("Tag außerhalb der Zeit")
+    st.write("Der Tag außerhalb der Zeit. Alles ist Eins.")
 else:
-    # Basis Daten holen
     full_data = get_base_data(kin_nr)
     
     if full_data:
-        # Titel
+        # HEADER BEREICH
         kin_name = full_data['identity']['name']
-        st.markdown(f"<h1 style='text-align:center;'>KIN {kin_nr} <span style='color:#666'>|</span> {kin_name}</h1>", unsafe_allow_html=True)
+        st.markdown(f"<div style='text-align:center; padding:20px;'><h1>KIN {kin_nr}</h1><div style='color:#888; margin-top:5px; font-size:1.1em;'>{kin_name}</div></div>", unsafe_allow_html=True)
         
-        # Gap Check
+        # PORTAL CHECK
         if full_data.get('time', {}).get('gap'):
-             st.markdown("<div style='text-align:center; color:#00FFA3; letter-spacing:4px; margin-bottom:20px;'>⚡ GALAKTISCHES PORTAL ⚡</div>", unsafe_allow_html=True)
+             st.markdown("<div style='text-align:center; color:#00FFA3; font-size:0.8em; letter-spacing:4px; margin-bottom:30px; text-shadow:0 0 10px rgba(0,255,163,0.5);'>⚡ GALAKTISCHES PORTAL ⚡</div>", unsafe_allow_html=True)
 
-        # D. Module abfeuern
-        for module in active_modules:
+        # D. MODULE ABFEUERN (In der gewählten Reihenfolge)
+        for name in selected_names:
+            module_info = available_map[name]
+            module = module_info['ref']
+            
             try:
-                # Wir rufen die render() Funktion des Moduls auf
-                # Wir übergeben: Die Kin-Nummer, das volle Daten-Objekt und die Datenbank
-                module.render(kin_nr, full_data, DB_TZ)
+                # INTELLIGENTE INJEKTION:
+                # Wir prüfen, welche Argumente die render-Funktion akzeptiert.
+                # So können alte Module (nur KIN) und neue (mit Datum) koexistieren.
                 
-                # Abstand zwischen Modulen
-                st.markdown("---") 
+                sig = inspect.signature(module.render)
+                params = sig.parameters
+                
+                # Argumente vorbereiten
+                args = []
+                if 'kin' in params: args.append(kin_nr)
+                if 'data' in params: args.append(full_data)
+                if 'db' in params: args.append(DB_TZ)
+                
+                # Der TIME FIX: Wenn das Modul 'date_obj' oder 'd_in' will, geben wir es ihm
+                if 'date_obj' in params: 
+                    # Wir rufen es explizit mit keyword auf, falls Position unsicher ist, 
+                    # aber hier nutzen wir einfach args append logic wenn die Reihenfolge stimmt.
+                    # Sicherer ist Keyword-Call, aber Streamlit Module sind meist position-based.
+                    # Wir machen es einfach: Wenn 4 Argumente verlangt werden, ist das 4. das Datum.
+                    if len(params) >= 4:
+                        module.render(kin_nr, full_data, DB_TZ, d_in)
+                    else:
+                        module.render(kin_nr, full_data, DB_TZ)
+                elif 'd_in' in params:
+                     module.render(kin_nr, full_data, DB_TZ, d_in)
+                else:
+                    # Fallback für Module ohne Datum (wie Navigator/Orakel)
+                    module.render(kin_nr, full_data, DB_TZ)
+                
+                # Eleganter Abstand
+                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+                
             except Exception as e:
-                st.error(f"Fehler im Modul '{module.get_name()}': {e}")
+                st.error(f"Fehler im Modul '{name}': {e}")
+                
+        # FOOTER
+        st.markdown("<div style='text-align:center; color:#333; margin-top:50px; font-size:0.7em;'>V22 OMNI STATION</div>", unsafe_allow_html=True)
+            
     else:
         st.error("Kin Daten nicht gefunden.")
