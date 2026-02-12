@@ -2,9 +2,11 @@ import streamlit as st
 import json
 import datetime
 import os
+import importlib.util
+import sys
 
 # ==============================================================================
-# 1. CORE LOGIK (Crash-Sicher & Monolith)
+# 1. DAS GEHIRN (MathEngine & DB) - Bleibt fest im Kern
 # ==============================================================================
 class MathEngine:
     ANCHOR_DATE = datetime.date(1986, 5, 19)
@@ -26,152 +28,136 @@ class MathEngine:
                     current -= datetime.timedelta(days=1)
                     if not (current.month == 2 and current.day == 29): days += 1
                 return (MathEngine.ANCHOR_KIN - days - 1) % 260 + 1
-        except: return 1 # Fallback
-
-    @staticmethod
-    def get_oracle_ids(kin):
-        if kin <= 0: return None
-        s_id = (kin - 1) % 20 + 1
-        t_id = (kin - 1) % 13 + 1
-        analog = (19 - (s_id - 1)) % 20 + 1
-        anti = (s_id + 10 - 1) % 20 + 1
-        def k_from_st(s, t): return ((s - 1) * 13 + (t - 1)) % 260 + 1
-        return {
-            "guide": (kin + 52 - 1) % 260 + 1,
-            "analog": k_from_st(analog, t_id),
-            "anti": k_from_st(anti, t_id),
-            "occult": (261 - kin)
-        }
+        except: return 1
 
 @st.cache_data
 def load_db():
-    # DIAGNOSE: Suche nach der JSON-Datei
     files = [f for f in os.listdir('.') if f.endswith('.json')]
-    # Wir suchen eine Datei die "tzolkin" im Namen hat, oder nehmen die erste JSON
     target = 'db_tzolkin_v21_enriched_FINAL.json'
-    
-    if target in files:
-        path = target
-    elif len(files) > 0:
-        path = files[0] # Nimm die erste gefundene Datei als Fallback
-    else:
-        return None # Keine Datei gefunden
-
+    path = target if target in files else (files[0] if files else None)
+    if not path: return None
     try:
-        with open(path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        with open(path, 'r', encoding='utf-8') as f: return json.load(f)
     except: return None
 
 DB_TZ = load_db()
 
-def safe_get(data, path, default="-"):
-    curr = data
-    try:
-        for key in path:
-            if isinstance(curr, dict): curr = curr.get(key, {})
-            else: return default
-        return curr if curr not in [None, {}, ""] else default
-    except: return default
-
-def get_v21_data(kin):
+def get_base_data(kin):
     if kin <= 0 or not DB_TZ: return None
-    k_dat = next((k for k in DB_TZ if k.get('kin') == kin), None)
-    if not k_dat: return None
-    
-    h_idx = ((kin - 1) // 4) + 1
-    c_pos = (kin - 65) % 5 + 1
-    c_col = ["Rot", "Weiß", "Blau", "Gelb"][((kin - 65) // 5) % 4]
-    
-    if 185 <= kin <= 249: sea = ("Rote Schlange", "Rot")
-    elif 55 <= kin <= 119: sea = ("Blauer Adler", "Blau")
-    elif 120 <= kin <= 184: sea = ("Gelbe Sonne", "Gelb")
-    else: sea = ("Weißer Hund", "Weiß")
-
-    return {
-        "kin": kin,
-        "name": safe_get(k_dat, ['identity', 'name']),
-        "seal": safe_get(k_dat, ['identity', 'seal', 'name']),
-        "color": safe_get(k_dat, ['identity', 'seal', 'color'], "Weiß"),
-        "tone": safe_get(k_dat, ['identity', 'tone', 'name']),
-        "h": {"idx": h_idx, "p": (kin-1)%4 + 1, "c": ["Rot", "Weiß", "Blau", "Gelb"][(h_idx-1)%4]},
-        "c": {"p": c_pos, "c": c_color}, "s": {"n": sea[0], "c": sea[1]},
-        "w": {"n": safe_get(k_dat, ['time', 'wavespell']), "c": safe_get(k_dat, ['identity', 'seal', 'color'])},
-        "gap": safe_get(k_dat, ['time', 'gap'], False)
-    }
+    return next((k for k in DB_TZ if k.get('kin') == kin), None)
 
 # ==============================================================================
-# 2. UI & DESIGN (Mobile First)
+# 2. DIE PLUGIN-LOGIK (Der "Suchtrupp")
 # ==============================================================================
-st.set_page_config(page_title="V21 STATION", layout="wide")
+def load_modules():
+    """Scannt das Verzeichnis nach Dateien, die mit 'mod_' beginnen."""
+    modules = {}
+    # Wir suchen im aktuellen Ordner
+    files = [f for f in os.listdir('.') if f.startswith('mod_') and f.endswith('.py')]
+    
+    for filename in files:
+        module_name = filename[:-3] # .py entfernen
+        try:
+            spec = importlib.util.spec_from_file_location(module_name, filename)
+            mod = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = mod
+            spec.loader.exec_module(mod)
+            
+            # Check: Hat das Modul die nötigen Funktionen?
+            if hasattr(mod, 'get_name') and hasattr(mod, 'render'):
+                # Erfolgreich geladen
+                display_name = mod.get_name()
+                modules[module_name] = {"name": display_name, "ref": mod}
+        except Exception as e:
+            st.sidebar.error(f"Fehler beim Laden von {filename}: {e}")
+            
+    return modules
+
+# ==============================================================================
+# 3. UI SETUP (Globales Design)
+# ==============================================================================
+st.set_page_config(page_title="V21 MAINBOARD", layout="wide", page_icon="🛸")
 
 st.markdown("""
     <style>
-    .stApp { background-color: #000; color: #eee; font-family: sans-serif; }
+    /* Globaler Darkmode & Font */
+    .stApp { background-color: #000000; color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
+    
+    /* Die Standard Glow-Box (Module können das nutzen) */
     .glow-box { 
-        background: #111; border: 1px solid #333; padding: 12px; 
-        border-radius: 8px; text-align: center; margin-bottom: 8px;
+        background: #111; border: 1px solid #333; padding: 15px; 
+        border-radius: 12px; text-align: center; margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .Rot { border-left: 5px solid #FF3E3E; }
-    .Weiß { border-left: 5px solid #FFFFFF; }
-    .Blau { border-left: 5px solid #3E8EFF; }
-    .Gelb { border-left: 5px solid #FFD700; }
-    .label { color: #888; font-size: 0.7em; text-transform: uppercase; display: block; }
-    .val { font-size: 1.2em; font-weight: bold; }
+    
+    /* Farb-Klassen für CSS Injektion */
+    .Rot { border-left: 4px solid #FF3E3E; }
+    .Weiß { border-left: 4px solid #FFFFFF; }
+    .Blau { border-left: 4px solid #3E8EFF; }
+    .Gelb { border-left: 4px solid #FFD700; }
+    
+    h1, h2, h3 { color: #fff; font-weight: 300; }
+    .highlight { color: #00FFA3; font-weight: bold; }
     </style>
 """, unsafe_allow_html=True)
 
+# ==============================================================================
+# 4. MAIN PROGRAMM
+# ==============================================================================
+
+# A. Header & Kontrolle
 with st.sidebar:
-    st.header("🛸 SETTINGS")
-    d_in = st.date_input("Datum:", datetime.date.today())
-    kn = MathEngine.get_kin(d_in.day, d_in.month, d_in.year)
-
-# ------------------------------------------------------------------------------
-# DIAGNOSE-CHECK (Verhindert den Absturz)
-# ------------------------------------------------------------------------------
-if DB_TZ is None:
-    st.error("❌ FEHLER: Die Datenbank-Datei (.json) wurde nicht gefunden!")
-    st.info("Bitte lade die Datei 'db_tzolkin_v21_enriched_FINAL.json' bei GitHub hoch.")
-    st.stop() # Stoppt hier, damit nichts abstürzt
-
-if kn != 0:
-    d = get_v21_data(kn)
+    st.header("🛸 V21 SYSTEM")
+    d_in = st.date_input("Zeit-Vektor:", datetime.date.today())
+    kin_nr = MathEngine.get_kin(d_in.day, d_in.month, d_in.year)
     
-    # TITAN-CHECK: Sind die Daten wirklich da?
-    if d: 
-        st.markdown(f"<div style='text-align:center;'><h1>KIN {d['kin']}</h1><p>{d['name']}</p></div>", unsafe_allow_html=True)
-        
-        if d.get('gap'):
-            st.warning("⚡ GALAKTISCHES PORTAL AKTIV")
-
-        t1, t2 = st.tabs(["🧬 NAVIGATOR", "🔮 ORAKEL"])
-
-        with t1:
-            c1, c2 = st.columns(2)
-            with c1:
-                st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Siegel</span><span class='val'>{d['seal']}</span><br>{d['tone']}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='glow-box {d['h']['c']}'><span class='label'>Harmonik</span><span class='val'>Takt {d['h']['p']}/4</span></div>", unsafe_allow_html=True)
-            with c2:
-                st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Welle</span><span class='val'>{d['w']['n']}</span></div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='glow-box {d['s']['c']}'><span class='label'>Season</span><span class='val'>{d['s']['n']}</span></div>", unsafe_allow_html=True)
-
-        with t2:
-            o_ids = MathEngine.get_oracle_ids(kn)
-            def render_o(role, knr):
-                obj = next((k for k in DB_TZ if k.get('kin') == knr), None)
-                if not obj: return
-                col = safe_get(obj, ['identity', 'seal', 'color'], "Weiß")
-                st.markdown(f"<div class='glow-box {col}'><span class='label'>{role}</span><span class='val'>KIN {knr}</span></div>", unsafe_allow_html=True)
-                with st.expander("Details"):
-                    st.write(f"**Name:** {safe_get(obj, ['identity', 'name'])}")
-                    st.write(f"**Siegel:** {safe_get(obj, ['identity', 'seal', 'name'])}")
-            
-            render_o("GUIDE", o_ids['guide'])
-            c_a, c_b = st.columns(2)
-            with c_a: render_o("ANTIPODE", o_ids['anti'])
-            with c_b: render_o("ANALOG", o_ids['analog'])
-            render_o("ZENTRUM", kn)
-            render_o("OCCULT", o_ids['occult'])
+    st.divider()
+    st.caption("MODULE MANAGER")
+    
+    # B. Suchtrupp losschicken
+    available_modules = load_modules()
+    active_modules = []
+    
+    if not available_modules:
+        st.warning("Keine Module gefunden! Lade Dateien hoch, die mit 'mod_' beginnen.")
     else:
-        st.error("Daten-Fehler: Das KIN konnte in der Datenbank nicht gefunden werden.")
-else:
+        # Erstelle Checkboxen für jedes gefundene Modul
+        for mod_key, info in available_modules.items():
+            # Standardmäßig aktiviert
+            if st.checkbox(info['name'], value=True, key=mod_key):
+                active_modules.append(info['ref'])
+
+# C. Rendering (Der unendliche Stream)
+if DB_TZ is None:
+    st.error("⚠️ Datenbank fehlt (JSON).")
+    st.stop()
+
+if kin_nr == 0:
     st.title("🟢 HUNAB KU")
+    st.write("Tag außerhalb der Zeit")
+else:
+    # Basis Daten holen
+    full_data = get_base_data(kin_nr)
+    
+    if full_data:
+        # Titel
+        kin_name = full_data['identity']['name']
+        st.markdown(f"<h1 style='text-align:center;'>KIN {kin_nr} <span style='color:#666'>|</span> {kin_name}</h1>", unsafe_allow_html=True)
+        
+        # Gap Check
+        if full_data.get('time', {}).get('gap'):
+             st.markdown("<div style='text-align:center; color:#00FFA3; letter-spacing:4px; margin-bottom:20px;'>⚡ GALAKTISCHES PORTAL ⚡</div>", unsafe_allow_html=True)
+
+        # D. Module abfeuern
+        for module in active_modules:
+            try:
+                # Wir rufen die render() Funktion des Moduls auf
+                # Wir übergeben: Die Kin-Nummer, das volle Daten-Objekt und die Datenbank
+                module.render(kin_nr, full_data, DB_TZ)
+                
+                # Abstand zwischen Modulen
+                st.markdown("---") 
+            except Exception as e:
+                st.error(f"Fehler im Modul '{module.get_name()}': {e}")
+    else:
+        st.error("Kin Daten nicht gefunden.")
