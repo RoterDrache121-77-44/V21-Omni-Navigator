@@ -132,68 +132,68 @@ if kn != 0:
     # Kompakter Header
     st.markdown(f"<div style='text-align:center; margin-bottom:10px;'><h1>KIN {d['kin']}</h1><div style='color:#ccc'>{d['name']}</div></div>", unsafe_allow_html=True)
     
-    wenn d['Lücke']:
- st.Info("⚡ PORTAL-TAG AKTIV")
+    if d['gap']:
+        st.info("⚡ PORTAL TAG AKTIV")
 
- Tab1, Tab2 = st.Registergarten(["🧬 NAVIGATOR", "🔮 ORAKEL"])
+    tab1, tab2 = st.tabs(["🧬 NAVIGATOR", "🔮 ORAKEL"])
 
- mit Tab1:
+    with tab1:
         # Stapel-Layout für Handy (Container statt Spalten wo möglich)
- c1, c2 = st.Spalten(2)
- mit c1:
- st.Markdown(f"<div class='Glühbox {d['Farbe']}'><span class='label'>Siegel</span><span class='val-big'>{d['Siegel']}</span><br><span style='Schriftgrüße:0,8em'>{d['Tonne']}</span></div>", unsicher_allow_html=Wahr)
- st.Markdown(f"<div class='Glühbox {d['h']['c']}'><span class='label'>Harmonik</span><span class='val-big'>Takt {d['h']['p']}/4</span></div>", unsicher_allow_html=Wahr)
- mit c2:
- st.Markdown(f"<div class='Glühbox {d['Farbe']}'><span class='label'>Welle</span><span class='val-big'>{d['w']['n']}</span></div>", unsicher_allow_html=Wahr)
- st.Markdown(f"<div class='Glühbox {d['s']['c']}'><span class='label'>Saison</span><span class='val-big'>{d['s']['n']}</span></div>", unsicher_allow_html=Wahr)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Siegel</span><span class='val-big'>{d['seal']}</span><br><span style='font-size:0.8em'>{d['tone']}</span></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='glow-box {d['h']['c']}'><span class='label'>Harmonik</span><span class='val-big'>Takt {d['h']['p']}/4</span></div>", unsafe_allow_html=True)
+        with c2:
+            st.markdown(f"<div class='glow-box {d['color']}'><span class='label'>Welle</span><span class='val-big'>{d['w']['n']}</span></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='glow-box {d['s']['c']}'><span class='label'>Season</span><span class='val-big'>{d['s']['n']}</span></div>", unsafe_allow_html=True)
 
- mit Tab2:
- o_ids = MathEngine.get_oracle_ids(Kn)
+    with tab2:
+        o_ids = MathEngine.get_oracle_ids(kn)
         
-        def render_o(Rolle, k_nr):
- Objekt = Nächste((k für k in DB_TZ wenn k.kommen('Verwaltung') == k_nr), Keine)
- wenn nicht Objekt: zurückgeben
+        def render_o(role, k_nr):
+            obj = next((k for k in DB_TZ if k.get('kin') == k_nr), None)
+            if not obj: return
             
             # Sicheres Laden aller Werte
- Spalte = sicher_holen(Objekt, ['Identität', 'Siegel', 'Farbe'], "Weiß")
- Name = sicher_holen(Objekt, ['Identität', 'Name'])
- Tonne = sicher_holen(Objekt, ['Identität', 'Tonne', 'Name'])
- Siegel = sicher_holen(Objekt, ['Identität', 'Siegel', 'Name'])
+            col = safe_get(obj, ['identity', 'seal', 'color'], "Weiß")
+            name = safe_get(obj, ['identity', 'name'])
+            tone = safe_get(obj, ['identity', 'tone', 'name'])
+            seal = safe_get(obj, ['identity', 'seal', 'name'])
             
-            # Versuch gegen Schlacht für "Kraft" zu finden
- id_data = obj.kommen('Identität', {}).kommen('Siegel', {})
-            # Suche nach „Kraft“, „Handhabung“ oder „Essenz“. Wenn nichts da, nimm '-'
- Leistung = id_data.kommen('Macht') oder id_daten.kommen('Aktion') oder id_daten.kommen('Wesen') Oder "-"
+            # Versuch verschiedene Keys für "Kraft" zu finden
+            id_data = obj.get('identity', {}).get('seal', {})
+            # Suche nach 'power', 'action' oder 'essence'. Wenn nichts da, nimm '-'
+            power = id_data.get('power') or id_data.get('action') or id_data.get('essence') or "-"
 
             # Karte
- st.Markdown(f"""
- <div class='Glühbox {Spalte}'>
- <span class='label'>{Rolle}</Spanne>
- <span style='Schriftstücke: fett; Schriftgrüße: 1,1em;'>KIN {k_nr}</Spanne>
- </div>
- """, unsicher_allow_html=Wahr)
+            st.markdown(f"""
+            <div class='glow-box {col}'>
+                <span class='label'>{role}</span>
+                <span style='font-weight:bold; font-size:1.1em;'>KIN {k_nr}</span>
+            </div>
+            """, unsafe_allow_html=True)
             
             # Dropdown
- mit st.Expander(f"Details anzeigen"):
- st.Schreiber(f"**Name:** {Name}")
- st.Schreiber(f"**Tonne:** {Tonne}")
- st.Schreiber(f"**Siegel:** {versiegelung}")
- st.Schreiber(f"**Kraft:** {Führung}")
+            with st.expander(f"Details anzeigen"):
+                st.write(f"**Name:** {name}")
+                st.write(f"**Ton:** {tone}")
+                st.write(f"**Siegel:** {seal}")
+                st.write(f"**Kraft:** {power}")
 
         # Orakel Layout (Handy-Optimiert: Untereinander)
- st.Markdown("### 👑 FÜHRUNG")
-        render_o("FÜHRER", o_ids['Führer'])
+        st.markdown("### 👑 FÜHRUNG")
+        render_o("GUIDE", o_ids['guide'])
         
- st.Markdown("### ⚡ ENERGIEFELD")
- c_a, c_b = st.Spalten(2)
- mit c_a: render_o("ANTIPODE", o_ids['Anti'])
- mit c_b: render_o("ANALOG", o_ids['analog'])
+        st.markdown("### ⚡ ENERGIE-FELD")
+        c_a, c_b = st.columns(2)
+        with c_a: render_o("ANTIPODE", o_ids['anti'])
+        with c_b: render_o("ANALOG", o_ids['analog'])
             
- st.Markdown("### 🌟 ZENTRUM")
+        st.markdown("### 🌟 ZENTRUM")
         render_o("DEIN KIN", kn)
         
- st.Markdown(„### 🗝️ OKKULTISMUS“)
- render_o("OKKULTE", o_ids['okkulte'])
+        st.markdown("### 🗝️ OCCULT")
+        render_o("OCCULT", o_ids['occult'])
 
-sonst:
- st.Titel("🟢 HUNAB KU")
+else:
+    st.title("🟢 HUNAB KU")
