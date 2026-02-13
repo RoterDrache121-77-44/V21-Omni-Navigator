@@ -1,93 +1,193 @@
 import streamlit as st
 
-def get_name():
-    return "🔊 Galaktische Frequenz (Ton)"
-
-def render(kin_nr, full_data, db_tz, date_obj=None):
+def render(kin_nr, data):
     """
-    Rendert die TON-FREQUENZ basierend auf der Tzolkin-Datenbank-Struktur.
-    Pfad: identity -> tone -> psychology
+    Rendert die TON-FREQUENZ als kompaktes High-Tech Modul.
+    
+    ARGUMENTE:
+    kin_nr (int): Die Nummer des Kins.
+    data (dict): Der Datensatz aus der Tzolkin-DB (entspricht 'kin_data' in app.py).
     """
-    
-    # 1. DATEN-SICHERHEIT (Safe Access)
-    if not full_data or 'identity' not in full_data:
-        st.error("Keine Identitäts-Daten gefunden.")
-        return {}
 
-    # Der Pfad aus deinem JSON-Schnipsel:
-    identity = full_data.get('identity', {})
-    tone_data = identity.get('tone', {})
-    
-    # Hier liegt der Schatz:
-    psych_data = tone_data.get('psychology', {}) 
-    
-    # Basis-Werte extrahieren
-    t_id = tone_data.get('id', 0)
-    t_name = tone_data.get('name', 'Unbekannt')
-    t_power = tone_data.get('power', '-')
-    t_action = tone_data.get('action', '-')
-    t_essence = tone_data.get('essence', '-')
-    
-    # 2. UI-DARSTELLUNG (Atomic Design)
-    
-    # Header: Die Frequenz
-    st.markdown(f"### 🔊 Ton {t_id}: {t_name}")
-    
-    # Die "Drei Worte" (Power, Action, Essence) als schnelle Übersicht
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Kraft", t_power)
-    c2.metric("Aktion", t_action)
-    c3.metric("Essenz", t_essence)
-    
-    st.markdown("---")
+    # -------------------------------------------------------------------------
+    # 0. DATEN-AKQUISE & MINING
+    # -------------------------------------------------------------------------
+    if kin_nr == 0 or not data:
+        return {} 
 
-    # 3. DER TIEFEN-SCAN (Psychologie)
-    # Wir nutzen einen Expander, um das UI sauber zu halten
-    with st.expander(f"🧠 {t_name} Frequenz: Tiefenanalyse", expanded=False):
-        
-        # Tabs für Licht, Schatten und Heilung
-        tab_light, tab_shadow, tab_heal = st.tabs(["✨ Licht-Potenzial", "🌑 Schatten-Arbeit", "🧬 Heilungs-Weg"])
-        
-        # --- TAB: LICHT ---
-        with tab_light:
-            light = psych_data.get('light_potential', {})
-            if light:
-                st.info(f"**Kern-Qualität:** {light.get('core_trait', '-')}")
-                for attr in light.get('attributes', []):
-                    st.markdown(f"**• {attr.get('name')}:** {attr.get('desc')}")
-            else:
-                st.caption("Keine Licht-Daten verfügbar.")
+    # Pfade navigieren
+    identity = data.get('identity', {})
+    tone = identity.get('tone', {})
+    seal = identity.get('seal', {})
+    
+    # === INTELLIGENTE SUCHE NACH DER PSYCHOLOGIE ===
+    # Strategie 1: Direkt in der Identität (Blueprint Standard)
+    tone_psych = identity.get('tone_psych', {})
+    
+    # Strategie 2: Fallback - Falls es doch unter 'seal' -> 'psychology' liegt
+    if not tone_psych:
+        tone_psych = seal.get('psychology', {}).get('tone_psych', {})
 
-        # --- TAB: SCHATTEN ---
-        with tab_shadow:
-            shadow = psych_data.get('shadow_integration', {})
-            if shadow:
-                st.error(f"**Kern-Angst:** {shadow.get('core_fear', '-')}")
-                for pat in shadow.get('patterns', []):
-                    st.markdown(f"**⚠️ {pat.get('name')}:** {pat.get('desc')}")
-            else:
-                st.caption("Keine Schatten-Daten verfügbar.")
+    # Basis Daten (Tone 1-13)
+    t_id = tone.get('id', 0)
+    t_name = tone.get('name', 'Ton')
+    t_action = tone.get('action', '-')
+    t_power = tone.get('power', '-')
+    t_essence = tone.get('essence', '-')
 
-        # --- TAB: HEILUNG ---
-        with tab_heal:
-            heal = psych_data.get('healing_path', {})
-            if heal:
-                st.success(f"**Strategie:** {heal.get('strategy', '-')}")
-                st.markdown("**Praxis & Fokus:**")
-                for prac in heal.get('practices', []):
-                    st.write(f"✅ {prac}")
-            else:
-                st.caption("Keine Heilungs-Daten verfügbar.")
-
-        # Zusatz-Info: Gelenk & Pulsar
-        st.caption(f"📍 Somatik: {tone_data.get('joint', '-')} | 🌀 Dimension: {tone_data.get('pulsar', '-')}")
-
-    # 4. EXPORT-DATEN (Return für PDF/JSON)
+    # Export für die Pipeline
     export_data = {
         "module": "daily_tone",
-        "title": f"Ton {t_id} - {t_name}",
-        "keywords": [t_power, t_action, t_essence],
-        "psychology": psych_data # Wir geben das rohe Objekt zurück für den Export
+        "tone_id": t_id,
+        "tone_name": t_name,
+        "psych_available": bool(tone_psych)
     }
+
+    # -------------------------------------------------------------------------
+    # 1. DESIGN ENGINE: "TACTICAL SLIM"
+    # -------------------------------------------------------------------------
+    # Wir leiten die Akzentfarbe vom Siegel ab, machen sie aber "elektrischer"
+    base_color_map = {
+        "Rot": "#FF2A2A", "Weiß": "#F0F0F0", "Blau": "#0099FF", "Gelb": "#FFCC00", "Grün": "#00FF66"
+    }
+    # Fallback auf Cyan, falls Farbe fehlt
+    accent = base_color_map.get(seal.get('color'), "#00E5FF")
+
+    st.markdown(f"""
+    <style>
+        /* Container Style: Slim, Tech, Clickable Feel */
+        .tone-module-container {{
+            background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-left: 3px solid {accent};
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            margin-top: -10px; /* Näher ans Hauptmodul rücken */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+        }}
+        
+        .tone-module-container:hover {{
+            background: rgba(255, 255, 255, 0.06);
+            border-color: {accent};
+            box-shadow: 0 0 10px {accent}40; /* 40 = Transparenz */
+        }}
+
+        /* Linke Seite: ID & Name */
+        .tm-id {{
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: {accent};
+            margin-right: 12px;
+        }}
+        .tm-name {{
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1.5px;
+            color: #E0E0E0;
+        }}
+
+        /* Rechte Seite: Visualizer Bar */
+        .tm-viz {{
+            display: flex;
+            gap: 2px;
+            align-items: center;
+        }}
+        .tm-seg {{
+            width: 3px;
+            height: 10px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 1px;
+        }}
+        .tm-seg.on {{
+            background: {accent};
+            box-shadow: 0 0 4px {accent};
+        }}
+        
+        /* Override Expander Border für dieses Modul */
+        div[data-testid="stExpander"] details {{
+            border-color: rgba(255,255,255,0.05) !important;
+        }}
+        
+        /* Tab Styling Fine-Tuning */
+        .stTabs [data-baseweb="tab-list"] {{ gap: 5px; }}
+        .stTabs [data-baseweb="tab"] {{ height: 40px; font-size: 0.8em; }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # -------------------------------------------------------------------------
+    # 2. RENDER: DIE SCHALTFLÄCHE (Visual)
+    # -------------------------------------------------------------------------
     
+    # 13 Segmente generieren
+    segments_html = ""
+    for i in range(1, 14):
+        state = "on" if i <= t_id else ""
+        segments_html += f"<div class='tm-seg {state}'></div>"
+
+    # HTML Output
+    st.markdown(f"""
+    <div class='tone-module-container'>
+        <div style='display:flex; align-items:center;'>
+            <div class='tm-id'>{t_id:02d}</div>
+            <div class='tm-name'>{t_name}</div>
+        </div>
+        <div style='display:flex; align-items:center;'>
+             <div style='font-size:0.7em; margin-right:15px; opacity:0.6; font-style:italic;'>{t_power}</div>
+            <div class='tm-viz'>
+                {segments_html}
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # -------------------------------------------------------------------------
+    # 3. RENDER: DER INHALT (Expander)
+    # -------------------------------------------------------------------------
+    
+    # Label für den Expander (Kompakt und Informativ)
+    expander_label = f"FREQUENZ-DETAILS ANZEIGEN ({t_action} & {t_essence})"
+    
+    with st.expander(expander_label):
+        
+        if tone_psych:
+            # Layout mit Tabs
+            t1, t2, t3 = st.tabs(["Licht", "Schatten", "Praxis"])
+            
+            # --- LICHT ---
+            with t1:
+                light = tone_psych.get('light_potential', {})
+                st.markdown(f"**Fokus:** {light.get('core_trait', '-')}")
+                for attr in light.get('attributes', []):
+                    st.info(f"✨ **{attr.get('name')}:** {attr.get('desc')}")
+
+            # --- SCHATTEN ---
+            with t2:
+                shadow = tone_psych.get('shadow_integration', {})
+                st.markdown(f"**Herausforderung:** {shadow.get('core_fear', '-')}")
+                for pat in shadow.get('patterns', []):
+                    st.error(f"⚠️ **{pat.get('name')}:** {pat.get('desc')}")
+
+            # --- HEILUNG ---
+            with t3:
+                heal = tone_psych.get('healing_path', {})
+                st.success(f"🧬 **Strategie:** {heal.get('strategy', '-')}")
+                st.markdown("**Praktische Anwendung:**")
+                for p in heal.get('practices', []):
+                    st.caption(f"✅ {p}")
+
+        else:
+            # Fallback Nachricht, schön formatiert
+            st.warning(f"Keine psychologischen Tiefendaten für Ton {t_id} ({t_name}) verfügbar.")
+            st.markdown(f"""
+            *Basis-Daten:* **Kraft:** {t_power}  
+            **Aktion:** {t_action}  
+            **Essenz:** {t_essence}
+            """)
+
     return export_data
