@@ -1,0 +1,494 @@
+{
+  "META": {
+    "scan_date": "2026-02-13 16:31:24.951047",
+    "scanner_version": "ULTRA_DEEP_V2_FIXED"
+  },
+  "DATABASES": {
+    "db_tzolkin_v21_enriched_FINAL.json": {
+      "record_count": 260,
+      "structure": {
+        "kin": "int",
+        "identity": {
+          "name": "str",
+          "maya": "str",
+          "seal": {
+            "id": "int",
+            "name": "str",
+            "maya": "str",
+            "color": "str",
+            "family": "str",
+            "clan": "str",
+            "planet": "str",
+            "flow": "str",
+            "chakra": "str",
+            "holon": "str",
+            "sense": "str",
+            "action": "str",
+            "essence": "str",
+            "psychology": {
+              "light_potential": {
+                "core_trait": "str",
+                "attributes": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ]
+              },
+              "shadow_integration": {
+                "core_fear": "str",
+                "patterns": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ],
+                "neurosis": {
+                  "name": "str",
+                  "mechanism": "str",
+                  "symptoms": [
+                    "str"
+                  ]
+                }
+              },
+              "healing_path": {
+                "strategy": "str",
+                "practices": [
+                  "str"
+                ],
+                "affirmation": "str"
+              }
+            }
+          },
+          "tone": {
+            "id": "int",
+            "name": "str",
+            "power": "str",
+            "action": "str",
+            "essence": "str",
+            "joint": "str",
+            "pulsar": "str",
+            "psychology": {
+              "light_potential": {
+                "core_trait": "str",
+                "attributes": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ]
+              },
+              "shadow_integration": {
+                "core_fear": "str",
+                "patterns": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ]
+              },
+              "healing_path": {
+                "strategy": "str",
+                "practices": [
+                  "str"
+                ]
+              }
+            }
+          },
+          "color": "str",
+          "family": "str",
+          "clan": "str"
+        },
+        "time": {
+          "wavespell": "str",
+          "castle": "str",
+          "harmonic": "int",
+          "chromatic": "int",
+          "gap": "bool",
+          "wavespell_psychology": {
+            "light_aspects": [
+              "str"
+            ],
+            "shadow_aspects": [
+              "str"
+            ],
+            "primary_shadow_trigger": "str"
+          }
+        },
+        "genetics": {
+          "index": "int",
+          "name_german": "str",
+          "biochem": "str",
+          "binary": "str",
+          "judgment": "str",
+          "image": "str"
+        },
+        "physics": {
+          "color_hex": "str",
+          "spin": "str",
+          "archetype": "str"
+        },
+        "oracle": {
+          "destiny": {
+            "kin": "int",
+            "seal": {
+              "id": "int",
+              "name": "str",
+              "maya": "str",
+              "color": "str",
+              "family": "str",
+              "clan": "str",
+              "planet": "str",
+              "flow": "str",
+              "chakra": "str",
+              "holon": "str",
+              "sense": "str",
+              "action": "str",
+              "essence": "str"
+            },
+            "tone": {
+              "id": "int",
+              "name": "str",
+              "power": "str",
+              "action": "str",
+              "essence": "str",
+              "joint": "str"
+            }
+          },
+          "analog": {
+            "kin": "int",
+            "seal": {
+              "id": "int",
+              "name": "str",
+              "maya": "str",
+              "color": "str",
+              "family": "str",
+              "clan": "str",
+              "planet": "str",
+              "flow": "str",
+              "chakra": "str",
+              "holon": "str",
+              "sense": "str",
+              "action": "str",
+              "essence": "str"
+            },
+            "tone": {
+              "id": "int",
+              "name": "str",
+              "power": "str",
+              "action": "str",
+              "essence": "str",
+              "joint": "str"
+            }
+          },
+          "antipode": {
+            "kin": "int",
+            "seal": {
+              "id": "int",
+              "name": "str",
+              "maya": "str",
+              "color": "str",
+              "family": "str",
+              "clan": "str",
+              "planet": "str",
+              "flow": "str",
+              "chakra": "str",
+              "holon": "str",
+              "sense": "str",
+              "action": "str",
+              "essence": "str"
+            },
+            "tone": {
+              "id": "int",
+              "name": "str",
+              "power": "str",
+              "action": "str",
+              "essence": "str",
+              "joint": "str"
+            }
+          },
+          "occult": {
+            "kin": "int",
+            "seal": {
+              "id": "int",
+              "name": "str",
+              "maya": "str",
+              "color": "str",
+              "family": "str",
+              "clan": "str",
+              "planet": "str",
+              "flow": "str",
+              "chakra": "str",
+              "holon": "str",
+              "sense": "str",
+              "action": "str",
+              "essence": "str"
+            },
+            "tone": {
+              "id": "int",
+              "name": "str",
+              "power": "str",
+              "action": "str",
+              "essence": "str",
+              "joint": "str"
+            }
+          },
+          "guide": {
+            "kin": "int",
+            "seal": {
+              "id": "int",
+              "name": "str",
+              "maya": "str",
+              "color": "str",
+              "family": "str",
+              "clan": "str",
+              "planet": "str",
+              "flow": "str",
+              "chakra": "str",
+              "holon": "str",
+              "sense": "str",
+              "action": "str",
+              "essence": "str"
+            },
+            "tone": {
+              "id": "int",
+              "name": "str",
+              "power": "str",
+              "action": "str",
+              "essence": "str",
+              "joint": "str"
+            }
+          }
+        },
+        "matrix": [
+          {
+            "plasma": "str",
+            "gate": {
+              "bmu": "int",
+              "coord": "str",
+              "function": "str"
+            }
+          }
+        ]
+      }
+    },
+    "db_13moon_v22_enriched_FINAL.json": {
+      "record_count": 366,
+      "structure": {
+        "day_of_year": "int | str",
+        "date_gregorian": "str",
+        "moon": {
+          "id": "int",
+          "name": "str",
+          "totem": "str",
+          "action": "str",
+          "psychology": {
+            "light_potential": {
+              "core_trait": "str",
+              "attributes": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ]
+            },
+            "shadow_integration": {
+              "core_fear": "str",
+              "patterns": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ]
+            },
+            "healing_path": {
+              "strategy": "str",
+              "practices": [
+                "str"
+              ]
+            }
+          }
+        },
+        "day_of_moon": "int",
+        "week": "str",
+        "plasma": {
+          "name": "str",
+          "chakra": "str",
+          "heptad_gate_bmu": "int",
+          "gate_bmu": "int"
+        },
+        "rune_futhark": "str",
+        "psi_chrono_unit_kin": "int | null",
+        "special_markers": {
+          "is_tower_day": "bool",
+          "is_magic_flight": "bool",
+          "is_leap_day": "bool",
+          "description": "str",
+          "is_day_out_of_time": "bool"
+        },
+        "hunab_ku_path": {
+          "id": "int",
+          "active": "bool",
+          "name": "str",
+          "desc": "str",
+          "connection_text": "str",
+          "week_meta": {
+            "color": "str",
+            "action": "str",
+            "location": "str"
+          },
+          "frequency_sum": "int",
+          "start": {
+            "id": "int",
+            "name": "str",
+            "bmu": "int",
+            "psychology": {
+              "light_potential": {
+                "core_trait": "str",
+                "attributes": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ]
+              },
+              "shadow_integration": {
+                "core_fear": "str",
+                "patterns": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ],
+                "neurosis": {
+                  "name": "str",
+                  "mechanism": "str",
+                  "symptoms": [
+                    "str"
+                  ]
+                }
+              },
+              "healing_path": {
+                "strategy": "str",
+                "practices": [
+                  "str"
+                ],
+                "affirmation": "str"
+              }
+            },
+            "chakra": "str"
+          },
+          "end": {
+            "id": "int",
+            "name": "str",
+            "bmu": "int",
+            "psychology": {
+              "light_potential": {
+                "core_trait": "str",
+                "attributes": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ]
+              },
+              "shadow_integration": {
+                "core_fear": "str",
+                "patterns": [
+                  {
+                    "name": "str",
+                    "desc": "str"
+                  }
+                ],
+                "neurosis": {
+                  "name": "str",
+                  "mechanism": "str",
+                  "symptoms": [
+                    "str"
+                  ]
+                }
+              },
+              "healing_path": {
+                "strategy": "str",
+                "practices": [
+                  "str"
+                ],
+                "affirmation": "str"
+              }
+            },
+            "chakra": "str"
+          },
+          "frequency": "int"
+        },
+        "psi_chrono_psychology": {
+          "kin": "int",
+          "name": "str",
+          "seal_psych": {
+            "light_potential": {
+              "core_trait": "str",
+              "attributes": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ]
+            },
+            "shadow_integration": {
+              "core_fear": "str",
+              "patterns": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ],
+              "neurosis": {
+                "name": "str",
+                "mechanism": "str",
+                "symptoms": [
+                  "str"
+                ]
+              }
+            },
+            "healing_path": {
+              "strategy": "str",
+              "practices": [
+                "str"
+              ],
+              "affirmation": "str"
+            }
+          },
+          "tone_psych": {
+            "light_potential": {
+              "core_trait": "str",
+              "attributes": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ]
+            },
+            "shadow_integration": {
+              "core_fear": "str",
+              "patterns": [
+                {
+                  "name": "str",
+                  "desc": "str"
+                }
+              ]
+            },
+            "healing_path": {
+              "strategy": "str",
+              "practices": [
+                "str"
+              ]
+            }
+          },
+          "wavespell_psych": {}
+        },
+        "week_color": "str",
+        "week_action": "str",
+        "psi_chrono": "int | str"
+      }
+    }
+  }
+}
