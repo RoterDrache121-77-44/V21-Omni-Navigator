@@ -7,33 +7,34 @@ import importlib.util
 import sys
 
 # ==============================================================================
-# 🧬 THE GALACTIC STATE PROTOCOL (Fixed & Verified)
+# 🧬 PROTOKOLL: GALACTIC STATE (Der Speicher)
 # ==============================================================================
 class GalacticState:
     """
-    Der synaptische Koffer. 
-    Hält ALLE Daten bereit und erlaubt Modulen, untereinander zu sprechen.
+    Der zentrale Speicher.
+    Hält das Kin, die Daten und erlaubt Modulen, Ergebnisse zu teilen.
     """
-    def __init__(self, kin, kin_data, db, date_obj, moon_data=None):
-        self.kin = kin              # Das berechnete Kin (z.B. 66)
-        self.data = kin_data        # JSON Daten für dieses Kin
-        self.db = db                # Die ganze Datenbank
-        self.date = date_obj        # Das Kalender-Datum
-        self.moon = moon_data       # Die 13-Monde Daten (Neu!)
-        self.memory = {}            # Der Speicher für Module
+    def __init__(self, kin, kin_data, db, date_obj):
+        self.kin = kin              # Das KORREKTE Kin (z.B. 66)
+        self.data = kin_data        # Die Daten aus der DB für dieses Kin
+        self.db = db                # Die ganze Datenbank (Tzolkin + Moon)
+        self.date = date_obj        # Das gewählte Datum
+        self.memory = {}            # Shared Memory für Module
 
     def remember(self, key, value):
+        """Ein Modul schreibt hier rein."""
         self.memory[key] = value
 
     def recall(self, key):
+        """Ein anderes Modul liest hier raus."""
         return self.memory.get(key, None)
 
 # ==============================================================================
-# ⚙️ SYSTEM CONFIG
+# ⚙️ SYSTEM CONFIG & CSS
 # ==============================================================================
 st.set_page_config(page_title="13:20 SYNC NODE", page_icon="🧬", layout="centered", initial_sidebar_state="collapsed")
 
-def inject_global_css():
+def inject_css():
     st.markdown("""
     <style>
         .stApp { background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #000000 100%); color: #E0E0E0; font-family: 'Segoe UI', sans-serif; }
@@ -46,136 +47,123 @@ def inject_global_css():
     </style>
     """, unsafe_allow_html=True)
 
-inject_global_css()
+inject_css()
 
 # ==============================================================================
-# 🧮 BRAIN ENGINE (Mit Dreamspell-Logik!)
+# 🧮 BRAIN ENGINE (KORRIGIERT: Dreamspell Logik)
 # ==============================================================================
 class Brain:
     @staticmethod
+    def count_leap_days(start_date, end_date):
+        """Zählt, wie viele 29. Februare zwischen Start und Ende liegen."""
+        leap_days = 0
+        # Wir gehen durch die Jahre
+        for year in range(start_date.year, end_date.year + 1):
+            # Ist es ein Schaltjahr?
+            if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
+                # Haben wir den 29.02. in diesem Jahr passiert?
+                leap_date = datetime.date(year, 2, 29)
+                if start_date <= leap_date <= end_date:
+                    leap_days += 1
+        return leap_days
+
+    @staticmethod
     def calculate_kin_dreamspell(target_date):
-        """
-        Echte Dreamspell-Berechnung:
-        Zählt ab einem Ankerpunkt, IGNORIERT aber den 29.02. (0.0.Hunab Ku).
-        """
-        # Anker: 26.07.2025 war KIN 73 (Gelber Solare Samen)
-        # Wir können auch einen älteren Anker nehmen, aber der hier ist nah dran.
-        anchor_date = datetime.date(2025, 7, 26)
-        anchor_kin = 73
-        
-        # Ist das Datum der 29.02.? Dann ist es Kin 0.
+        # 0. SONDERFALL: 29.02. ist immer 0.0.Hunab Ku
         if target_date.month == 2 and target_date.day == 29:
             return 0
-
-        # Wir iterieren Tag für Tag, um Schalt-Tage sicher zu überspringen
-        # (Bei weiten Distanzen in die Vergangenheit wäre das langsam, aber für +/- 50 Jahre ist es okay)
+            
+        # 1. ANKER SETZEN (Bewährter Anker)
+        # 26.07.2019 war KIN 14 (Weißer Magier). Das ist ein sicherer Startpunkt.
+        anchor_date = datetime.date(2019, 7, 26)
+        anchor_kin = 14
         
-        current_date = anchor_date
-        current_kin = anchor_kin
+        # 2. TAGE ZÄHLEN (Gregorianisch)
+        delta_days = (target_date - anchor_date).days
         
-        # Richtung bestimmen
+        # 3. SCHALTTAGE RAUSRECHNEN (Das war der Fehler!)
+        # Wir müssen wissen, wie viele 29.02. dazwischen lagen.
         if target_date > anchor_date:
-            step = datetime.timedelta(days=1)
-            while current_date < target_date:
-                current_date += step
-                # Wenn wir auf den 29.02. treffen, zählen wir das Kin NICHT hoch!
-                if current_date.month == 2 and current_date.day == 29:
-                    continue
-                current_kin = (current_kin % 260) + 1
-        
-        elif target_date < anchor_date:
-            step = datetime.timedelta(days=-1)
-            while current_date > target_date:
-                # Zuerst Schritt zurück
-                current_date += step
-                # War der Tag, von dem wir kommen, ein 29.02.? (Wir gehen rückwärts!)
-                if current_date.month == 2 and current_date.day == 29:
-                    continue
-                current_kin -= 1
-                if current_kin <= 0: current_kin = 260
+            leaps = Brain.count_leap_days(anchor_date, target_date)
+            # Wir ziehen die Schalttage ab, da Dreamspell sie ignoriert
+            dreamspell_days = delta_days - leaps
+        else:
+            # Rückwärts rechnen
+            leaps = Brain.count_leap_days(target_date, anchor_date)
+            dreamspell_days = delta_days + leaps # Delta ist hier negativ, also addieren wir quasi
 
-        return current_kin
+        # 4. MODULO RECHNEN
+        kin_calc = (anchor_kin + dreamspell_days) % 260
+        
+        # Korrektur für Modulo 0
+        while kin_calc <= 0: kin_calc += 260
+        while kin_calc > 260: kin_calc -= 260
+            
+        return kin_calc
 
     @staticmethod
     @st.cache_data
-    def load_memory_banks():
+    def load_db():
         data = {'tzolkin': [], 'moon': []}
         try:
             with open("db_tzolkin_v21_enriched_FINAL.json", "r", encoding="utf-8") as f: 
                 data['tzolkin'] = json.load(f)
-        except: st.error("🚨 Tzolkin DB fehlt!")
-        
+        except: pass
         try:
             with open("db_13moon_v22_enriched_FINAL.json", "r", encoding="utf-8") as f: 
                 data['moon'] = json.load(f)
         except: pass
-        
         return data
 
 # ==============================================================================
-# 🚀 MAIN APP
+# 🚀 MAIN APP LOOP
 # ==============================================================================
 def main():
+    # 1. UI SIDEBAR
     with st.sidebar:
         st.header("⚙️ NAVIGATOR")
         d_input = st.date_input("Datum", datetime.date.today())
-        st.caption("Core: Dreamspell Logic v2.2")
+        st.caption("Engine: Dreamspell V2.4 (Leap-Skip)")
 
     st.title("GALAXY SYNC 2.1")
 
-    # 1. DB LADEN
-    db = Brain.load_memory_banks()
-    if not db['tzolkin']: st.stop()
+    # 2. DATENBANK LADEN
+    db = Brain.load_db()
+    if not db['tzolkin']:
+        st.error("🚨 FEHLER: Datenbank nicht gefunden. Bitte JSON hochladen.")
+        st.stop()
 
-    # 2. KIN BERECHNEN (Jetzt richtig!)
+    # 3. KIN BERECHNEN (Jetzt korrekt!)
     kin_today = Brain.calculate_kin_dreamspell(d_input)
-    
-    # 3. DATEN HOLEN
+
+    # 4. DATEN FÜR HEUTE HOLEN
     current_kin_data = {}
     if kin_today > 0:
-        # DB ist 0-indexed, Kin ist 1-indexed
-        idx = kin_today - 1
-        if 0 <= idx < len(db['tzolkin']):
-            current_kin_data = db['tzolkin'][idx]
-    
-    # 4. 13-MOON DATEN HOLEN (Lookup)
-    current_moon_data = {}
-    search_key = d_input.strftime("%d.%m") # "13.02"
-    for entry in db['moon']:
-        if entry.get('date_gregorian') == search_key:
-            current_moon_data = entry
-            break
+        current_kin_data = db['tzolkin'][kin_today - 1]
 
-    # 5. STATE ERSTELLEN (Alles verpacken)
-    state = GalacticState(kin_today, current_kin_data, db, d_input, current_moon_data)
+    # 5. STATE INITIALISIEREN (Synaptic Protocol)
+    state = GalacticState(kin_today, current_kin_data, db, d_input)
 
-    # 6. HEADER ANZEIGEN
+    # 6. HEADER RENDERN (Native)
     if kin_today == 0:
-        st.info("🌌 0.0.Hunab Ku - Der Tag außerhalb der Zeit (29.02.)")
+        st.info("🌌 0.0.Hunab Ku - Der Tag außerhalb der Zeit")
     elif current_kin_data:
         id_dat = current_kin_data.get('identity', {})
         seal = id_dat.get('seal', {})
         tone = id_dat.get('tone', {})
         
-        color_map = {"Rot": "border-rot", "Weiss": "border-weiss", "Blau": "border-blau", "Gelb": "border-gelb", "Grün": "border-gruen"}
-        css = color_map.get(seal.get('color'), "border-weiss")
+        css = {"Rot": "border-rot", "Weiss": "border-weiss", "Blau": "border-blau", "Gelb": "border-gelb", "Grün": "border-gruen"}.get(seal.get('color'), "border-weiss")
 
         c1, c2 = st.columns(2)
         with c1:
             st.markdown(f'<div class="glass-card {css}"><div class="small-label">KIN {kin_today}</div><div class="big-value">{id_dat.get("name")}</div></div>', unsafe_allow_html=True)
         with c2:
             st.markdown(f'<div class="glass-card"><div class="small-label">TON {tone.get("id")}</div><div class="big-value">{tone.get("name")}</div></div>', unsafe_allow_html=True)
-            
-        # Debug / Vertrauen schaffen
-        if current_moon_data:
-            m_name = current_moon_data.get('moon', {}).get('name', '?')
-            m_day = current_moon_data.get('day_of_moon', '?')
-            st.caption(f"📅 Synchronometer: {m_name}, Tag {m_day} | Psi-Chrono: {current_moon_data.get('psi_chrono', '-')}")
 
-    # 7. MODULE STARTEN
+    # 7. MODULE LADEN UND AUSFÜHREN
     st.markdown("---")
-    st.caption("🔌 AKTIVE MODULE (State Protocol)")
-
+    st.caption("🔌 SYNAPTIC MODULES")
+    
     module_files = glob.glob("mod_*.py")
     if not module_files: st.info("Keine Module gefunden.")
 
@@ -189,12 +177,10 @@ def main():
 
             if hasattr(module, 'render'):
                 with st.container():
-                    try:
-                        module.render(state) # Hier geht der State rein!
-                    except Exception as e:
-                        st.error(f"⚠️ {mod_name}: {e}")
+                    # Hier übergeben wir nur den STATE!
+                    module.render(state)
         except Exception as e:
-            st.error(f"Load Error {mod_file}: {e}")
+            st.error(f"Fehler in {mod_name}: {e}")
 
 if __name__ == "__main__":
     main()
