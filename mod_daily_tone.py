@@ -114,7 +114,6 @@ def render(kin_nr, data):
         /* Override Expander Border für dieses Modul */
         div[data-testid="stExpander"] details {{
             border-color: rgba(255,255,255,0.05) !important;
-            background: rgba(0,0,0,0.2);
         }}
         
         /* Tab Styling Fine-Tuning */
@@ -154,7 +153,7 @@ def render(kin_nr, data):
     # -------------------------------------------------------------------------
     
     # Label für den Expander (Kompakt und Informativ)
-    expander_label = f"FREQUENZ-DETAILS: {t_action} & {t_essence}"
+    expander_label = f"FREQUENZ-DETAILS ANZEIGEN ({t_action} & {t_essence})"
     
     with st.expander(expander_label):
         
@@ -197,7 +196,11 @@ def render(kin_nr, data):
 
         else:
             # Fallback Nachricht
-            st.warning(f"Keine Tiefendaten für Ton {t_id}. DB-Pfad 'identity->tone_psych' leer.")
-            st.markdown(f"**Kraft:** {t_power} | **Aktion:** {t_action} | **Essenz:** {t_essence}")
+            st.warning(f"Keine psychologischen Tiefendaten für Ton {t_id} ({t_name}) verfügbar.")
+            st.markdown(f"""
+            *Basis-Daten:* **Kraft:** {t_power}  
+            **Aktion:** {t_action}  
+            **Essenz:** {t_essence}
+            """)
 
     return export_data
