@@ -6,7 +6,7 @@ def render(kin_nr, data):
     
     ARGUMENTE:
     kin_nr (int): Die Nummer des Kins.
-    data (dict): Der Datensatz aus der Tzolkin-DB (entspricht 'kin_data' in app.py).
+    data (dict): Der Datensatz aus der Tzolkin-DB (wird von app.py als 'data' übergeben).
     """
 
     # -------------------------------------------------------------------------
@@ -15,16 +15,17 @@ def render(kin_nr, data):
     if kin_nr == 0 or not data:
         return {} 
 
-    # Pfade navigieren
+    # Pfade navigieren (ROBUST)
     identity = data.get('identity', {})
     tone = identity.get('tone', {})
     seal = identity.get('seal', {})
     
     # === INTELLIGENTE SUCHE NACH DER PSYCHOLOGIE ===
-    # Strategie 1: Direkt in der Identität (Blueprint Standard)
+    # Laut Blueprint liegt 'tone_psych' direkt in 'identity'.
+    # Wir schauen dort zuerst.
     tone_psych = identity.get('tone_psych', {})
     
-    # Strategie 2: Fallback - Falls es doch unter 'seal' -> 'psychology' liegt
+    # Sicherheits-Fallback, falls die DB an manchen Tagen anders strukturiert ist
     if not tone_psych:
         tone_psych = seal.get('psychology', {}).get('tone_psych', {})
 
@@ -74,6 +75,7 @@ def render(kin_nr, data):
             background: rgba(255, 255, 255, 0.06);
             border-color: {accent};
             box-shadow: 0 0 10px {accent}40; /* 40 = Transparenz */
+            cursor: pointer;
         }}
 
         /* Linke Seite: ID & Name */
@@ -112,6 +114,7 @@ def render(kin_nr, data):
         /* Override Expander Border für dieses Modul */
         div[data-testid="stExpander"] details {{
             border-color: rgba(255,255,255,0.05) !important;
+            background: rgba(0,0,0,0.2);
         }}
         
         /* Tab Styling Fine-Tuning */
@@ -151,7 +154,7 @@ def render(kin_nr, data):
     # -------------------------------------------------------------------------
     
     # Label für den Expander (Kompakt und Informativ)
-    expander_label = f"FREQUENZ-DETAILS ANZEIGEN ({t_action} & {t_essence})"
+    expander_label = f"FREQUENZ-DETAILS: {t_action} & {t_essence}"
     
     with st.expander(expander_label):
         
@@ -162,32 +165,39 @@ def render(kin_nr, data):
             # --- LICHT ---
             with t1:
                 light = tone_psych.get('light_potential', {})
-                st.markdown(f"**Fokus:** {light.get('core_trait', '-')}")
+                # Safely get core trait
+                core_trait = light.get('core_trait', '-')
+                st.markdown(f"**Fokus:** {core_trait}")
+                
+                # Attribute Loop
                 for attr in light.get('attributes', []):
                     st.info(f"✨ **{attr.get('name')}:** {attr.get('desc')}")
 
             # --- SCHATTEN ---
             with t2:
                 shadow = tone_psych.get('shadow_integration', {})
-                st.markdown(f"**Herausforderung:** {shadow.get('core_fear', '-')}")
+                # Safely get core fear
+                core_fear = shadow.get('core_fear', '-')
+                st.markdown(f"**Herausforderung:** {core_fear}")
+                
+                # Patterns Loop
                 for pat in shadow.get('patterns', []):
                     st.error(f"⚠️ **{pat.get('name')}:** {pat.get('desc')}")
 
             # --- HEILUNG ---
             with t3:
                 heal = tone_psych.get('healing_path', {})
-                st.success(f"🧬 **Strategie:** {heal.get('strategy', '-')}")
+                # Safely get strategy
+                strategy = heal.get('strategy', '-')
+                st.success(f"🧬 **Strategie:** {strategy}")
+                
                 st.markdown("**Praktische Anwendung:**")
                 for p in heal.get('practices', []):
                     st.caption(f"✅ {p}")
 
         else:
-            # Fallback Nachricht, schön formatiert
-            st.warning(f"Keine psychologischen Tiefendaten für Ton {t_id} ({t_name}) verfügbar.")
-            st.markdown(f"""
-            *Basis-Daten:* **Kraft:** {t_power}  
-            **Aktion:** {t_action}  
-            **Essenz:** {t_essence}
-            """)
+            # Fallback Nachricht
+            st.warning(f"Keine Tiefendaten für Ton {t_id}. DB-Pfad 'identity->tone_psych' leer.")
+            st.markdown(f"**Kraft:** {t_power} | **Aktion:** {t_action} | **Essenz:** {t_essence}")
 
     return export_data
