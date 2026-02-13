@@ -39,7 +39,8 @@ def render(kin_nr, data):
         "Grün":  {"bg": "linear-gradient(135deg, #00FF66 0%, #004400 100%)", "border": "#00FF66", "glow": "rgba(0, 255, 102, 0.6)"}
     }
     
-    style = colors.get(seal['color'], colors["Weiß"])
+    # Fallback auf Weiß, falls Farbe fehlt
+    style = colors.get(seal.get('color', 'Weiß'), colors["Weiß"])
     
     # Custom CSS für dieses Modul
     st.markdown(f"""
@@ -105,19 +106,17 @@ def render(kin_nr, data):
     with st.expander("🧬 ANALYSE DATEN-UPLINK", expanded=False):
         
         # A) HUD - TECHNISCHE DATEN
-        # Wir nutzen 3 Spalten für schnelle Fakten
         c1, c2, c3 = st.columns(3)
         with c1:
-            st.markdown(f"<div class='stat-panel'><div class='stat-label'>Familie</div><div class='stat-value'>{seal['family']}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-panel'><div class='stat-label'>Familie</div><div class='stat-value'>{seal.get('family', '-')}</div></div>", unsafe_allow_html=True)
         with c2:
-            st.markdown(f"<div class='stat-panel'><div class='stat-label'>Clan</div><div class='stat-value'>{seal['clan']}</div></div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='stat-panel'><div class='stat-label'>Clan</div><div class='stat-value'>{seal.get('clan', '-')}</div></div>", unsafe_allow_html=True)
         with c3:
             st.markdown(f"<div class='stat-panel'><div class='stat-label'>Planet</div><div class='stat-value'>{seal.get('planet', '-')}</div></div>", unsafe_allow_html=True)
         
         st.markdown("") # Spacer
 
         # B) TON-FREQUENZ VISUALIZER
-        # Wir nutzen eine Progress Bar um die "Lautstärke" des Tons anzuzeigen (1-13)
         st.caption(f"Frequenz-Modulation: Ton {tone['id']} ({tone['name']})")
         st.progress(tone['id'] / 13)
         
@@ -142,10 +141,11 @@ def render(kin_nr, data):
             healing = psych.get('healing_path', {})
             st.info(f"**Strategie:** {healing.get('strategy', '-')}")
             
-            # Die Affirmation als Code-Block oder Zitat für Fokus
+            # Die Affirmation als Zitat
             st.markdown("### 🧘 Affirmation")
             st.markdown(f"""
-            > *"Ich {seal['action']} um zu {seal['power']}, {seal['essence']} versiegelnd.* > *Mit dem {tone['name']} Ton der {tone['power']}."*
+            > "Ich {seal['action']} um zu {seal['power']}, {seal['essence']} versiegelnd.  
+            > Mit dem {tone['name']} Ton der {tone['power']}."
             """)
 
     # Return für Export
