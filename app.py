@@ -2,226 +2,287 @@ import streamlit as st
 import json
 import datetime
 import os
-import importlib.util
-import sys
-import inspect
 
 # ==============================================================================
-# 1. DAS GEHIRN (MathEngine & DB)
+# 🌌 KONFIGURATION & DESIGN SYSTEM (CSS-INJEKTION)
+# ==============================================================================
+st.set_page_config(
+    page_title="13:20 SYNC NODE",
+    page_icon="🧬",
+    layout="centered",
+    initial_sidebar_state="expanded"
+)
+
+def inject_custom_css():
+    st.markdown("""
+    <style>
+        /* Deep Space Container */
+        .stApp {
+            background: radial-gradient(circle at 50% 0%, #1a1a2e 0%, #000000 100%);
+            color: #E0E0E0;
+            font-family: 'Segoe UI', sans-serif;
+        }
+        
+        /* Die mystische Glas-Box */
+        .glass-card {
+            background: rgba(20, 20, 30, 0.70);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Neon-Akzente & Text */
+        h1, h2, h3 { color: #E0E0E0 !important; font-weight: 300; letter-spacing: 2px; text-transform: uppercase; }
+        .highlight { color: #00FF66; font-weight: bold; }
+        .subtext { font-size: 0.8em; opacity: 0.7; }
+        
+        /* Custom Divider */
+        hr { border-color: rgba(255,255,255,0.1); margin: 20px 0; }
+    </style>
+    """, unsafe_allow_html=True)
+
+# ==============================================================================
+# 📐 MASCHINENRAUM: STRANG A - TZOLKIN MATH ENGINE (Der Vektor)
 # ==============================================================================
 class MathEngine:
-    ANCHOR_DATE = datetime.date(1986, 5, 19)
+    ANCHOR_DATE = datetime.date(1986, 5, 19) # Kin 121
     ANCHOR_KIN = 121
+
     @staticmethod
-    def get_kin(d, m, y):
-        if m == 2 and d == 29: return 0
-        try:
-            target = datetime.date(y, m, d)
-            current = MathEngine.ANCHOR_DATE
-            days = 0
-            if target >= current:
-                while current < target:
-                    if not (current.month == 2 and current.day == 29): days += 1
-                    current += datetime.timedelta(days=1)
-                return (MathEngine.ANCHOR_KIN + days - 1) % 260 + 1
-            else:
-                while current > target:
-                    current -= datetime.timedelta(days=1)
-                    if not (current.month == 2 and current.day == 29): days += 1
-                return (MathEngine.ANCHOR_KIN - days - 1) % 260 + 1
-        except: return 1
-
-@st.cache_data
-def load_db():
-    files = [f for f in os.listdir('.') if f.endswith('.json')]
-    target = 'db_tzolkin_v21_enriched_FINAL.json'
-    path = target if target in files else (files[0] if files else None)
-    if not path: return None
-    try:
-        with open(path, 'r', encoding='utf-8') as f: return json.load(f)
-    except: return None
-
-DB_TZ = load_db()
-
-def get_base_data(kin):
-    if kin <= 0 or not DB_TZ: return None
-    return next((k for k in DB_TZ if k.get('kin') == kin), None)
-
-# ==============================================================================
-# 2. DER INTELLIGENTE SUCHTRUPP (Module Loader)
-# ==============================================================================
-def load_modules():
-    """Scannt Ordner, lädt Module und gibt sie als Dictionary zurück."""
-    modules = {}
-    files = [f for f in os.listdir('.') if f.startswith('mod_') and f.endswith('.py')]
-    
-    for filename in files:
-        module_key = filename[:-3] # Dateiname ohne .py
-        try:
-            spec = importlib.util.spec_from_file_location(module_key, filename)
-            mod = importlib.util.module_from_spec(spec)
-            sys.modules[module_key] = mod
-            spec.loader.exec_module(mod)
+    def calculate_kin(day, month, year):
+        """
+        Berechnet das Kin rein mathematisch. 
+        Ignoriert Schaltjahre nicht, aber überspringt 29.02. in der Zählung.
+        """
+        # 0. Hunab Ku Check (Der Tag außerhalb der Matrix)
+        if month == 2 and day == 29:
+            return 0 
             
-            if hasattr(mod, 'get_name') and hasattr(mod, 'render'):
-                display_name = mod.get_name()
-                # Wir speichern Referenz und Display-Name
-                modules[display_name] = {"ref": mod, "key": module_key}
-        except Exception as e:
-            st.sidebar.error(f"Fehler in {filename}: {e}")
-            
-    return modules
-
-# ==============================================================================
-# 3. MYSTICAL UI DESIGN (CSS V22)
-# ==============================================================================
-st.set_page_config(page_title="V22 OMNI", layout="wide", page_icon="🛸")
-
-st.markdown("""
-    <style>
-    /* 1. HINTERGRUND: Deep Space Gradient */
-    .stApp { 
-        background: radial-gradient(circle at 50% 10%, #1a1a1e 0%, #000000 90%);
-        color: #E0E0E0; 
-        font-family: 'Helvetica Neue', sans-serif; 
-    }
-    
-    /* 2. GLOW BOXEN: Eleganter & Subtiler */
-    .glow-box { 
-        background: rgba(18, 18, 18, 0.7); /* Leicht transparent */
-        border: 1px solid #333; 
-        backdrop-filter: blur(10px); /* Milchglas-Effekt */
-        padding: 15px; 
-        border-radius: 12px; 
-        text-align: center; 
-        margin-bottom: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-        transition: transform 0.2s;
-    }
-    .glow-box:hover {
-        border-color: #555;
-    }
-    
-    /* 3. TYPOGRAFIE */
-    h1 { 
-        font-weight: 200; 
-        letter-spacing: 2px; 
-        text-transform: uppercase; 
-        background: -webkit-linear-gradient(#eee, #333);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0px;
-    }
-    h2, h3 { color: #ccc; font-weight: 300; letter-spacing: 1px; }
-    
-    /* 4. FARB-AKZENTE (Leuchtend) */
-    .Rot { border-left: 3px solid #FF3E3E; box-shadow: -5px 0 15px -5px rgba(255, 62, 62, 0.2); }
-    .Weiß { border-left: 3px solid #FFFFFF; box-shadow: -5px 0 15px -5px rgba(255, 255, 255, 0.2); }
-    .Blau { border-left: 3px solid #3E8EFF; box-shadow: -5px 0 15px -5px rgba(62, 142, 255, 0.2); }
-    .Gelb { border-left: 3px solid #FFD700; box-shadow: -5px 0 15px -5px rgba(255, 215, 0, 0.2); }
-    .Grün { border-left: 3px solid #00FF00; box-shadow: -5px 0 15px -5px rgba(0, 255, 0, 0.2); }
-    
-    /* 5. SIDEBAR */
-    section[data-testid="stSidebar"] {
-        background-color: #050505;
-        border-right: 1px solid #222;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# ==============================================================================
-# 4. HAUPT-PROGRAMM
-# ==============================================================================
-
-# A. SIDEBAR & KONTROLLE
-with st.sidebar:
-    st.header("🛸 CONTROL")
-    # Zeit-Vektor
-    d_in = st.date_input("Zeit-Vektor:", datetime.date.today())
-    kin_nr = MathEngine.get_kin(d_in.day, d_in.month, d_in.year)
-    
-    st.markdown("---")
-    st.caption("MODULE STREAM")
-    
-    # B. MODULE LADEN & SORTIEREN
-    available_map = load_modules()
-    
-    if not available_map:
-        st.warning("System leer. Bitte 'mod_' Dateien hochladen.")
-        selected_names = []
-    else:
-        # Sortier-Liste erstellen
-        all_names = list(available_map.keys())
-        # Multiselect erlaubt Auswahl UND Reihenfolge
-        selected_names = st.multiselect(
-            "Anzeige wählen:", 
-            options=all_names, 
-            default=all_names
-        )
-
-# C. RENDERING (DER STREAM)
-if DB_TZ is None:
-    st.error("❌ Datenbank fehlt. Bitte JSON hochladen.")
-    st.stop()
-
-if kin_nr == 0:
-    st.title("🟢 HUNAB KU")
-    st.write("Der Tag außerhalb der Zeit. Alles ist Eins.")
-else:
-    full_data = get_base_data(kin_nr)
-    
-    if full_data:
-        # HEADER BEREICH
-        kin_name = full_data['identity']['name']
-        st.markdown(f"<div style='text-align:center; padding:20px;'><h1>KIN {kin_nr}</h1><div style='color:#888; margin-top:5px; font-size:1.1em;'>{kin_name}</div></div>", unsafe_allow_html=True)
+        target = datetime.date(year, month, day)
+        current = MathEngine.ANCHOR_DATE
+        days_diff = 0
         
-        # PORTAL CHECK
-        if full_data.get('time', {}).get('gap'):
-             st.markdown("<div style='text-align:center; color:#00FFA3; font-size:0.8em; letter-spacing:4px; margin-bottom:30px; text-shadow:0 0 10px rgba(0,255,163,0.5);'>⚡ GALAKTISCHES PORTAL ⚡</div>", unsafe_allow_html=True)
+        # Wir iterieren, um den 29.02. sauber zu überspringen (sicherste Methode)
+        # Richtung: Zukunft
+        if target >= current:
+            while current < target:
+                current += datetime.timedelta(days=1)
+                if not (current.month == 2 and current.day == 29):
+                    days_diff += 1
+            # Modulo-Magie
+            new_kin = (MathEngine.ANCHOR_KIN + days_diff - 1) % 260 + 1
+            return new_kin
+            
+        # Richtung: Vergangenheit
+        else:
+            while current > target:
+                current -= datetime.timedelta(days=1)
+                if not (current.month == 2 and current.day == 29):
+                    days_diff += 1
+            new_kin = (MathEngine.ANCHOR_KIN - days_diff - 1) % 260 + 1
+            return new_kin
 
-        # D. MODULE ABFEUERN (In der gewählten Reihenfolge)
-        for name in selected_names:
-            module_info = available_map[name]
-            module = module_info['ref']
+# ==============================================================================
+# 🗺️ MASCHINENRAUM: STRANG B - 13 MOON LOOKUP ENGINE (Der Raum)
+# ==============================================================================
+class MoonEngine:
+    @staticmethod
+    def get_moon_data(day, month, db_moon):
+        """
+        Sucht im statischen Raster (db_13moon) nach dem Eintrag.
+        Ignoriert das Jahr.
+        """
+        if month == 2 and day == 29:
+            return {"special": "HUNAB_KU_00", "name": "Hunab Ku (Schalttag)"}
+
+        search_key = f"{day:02d}.{month:02d}"
+        
+        # Generator Expression für Speed (Next or None)
+        entry = next((x for x in db_moon if x.get('date_gregorian') == search_key), None)
+        
+        if not entry:
+            return None # Sollte nicht passieren, außer DB Fehler
             
-            try:
-                # INTELLIGENTE INJEKTION:
-                # Wir prüfen, welche Argumente die render-Funktion akzeptiert.
-                # So können alte Module (nur KIN) und neue (mit Datum) koexistieren.
-                
-                sig = inspect.signature(module.render)
-                params = sig.parameters
-                
-                # Argumente vorbereiten
-                args = []
-                if 'kin' in params: args.append(kin_nr)
-                if 'data' in params: args.append(full_data)
-                if 'db' in params: args.append(DB_TZ)
-                
-                # Der TIME FIX: Wenn das Modul 'date_obj' oder 'd_in' will, geben wir es ihm
-                if 'date_obj' in params: 
-                    # Wir rufen es explizit mit keyword auf, falls Position unsicher ist, 
-                    # aber hier nutzen wir einfach args append logic wenn die Reihenfolge stimmt.
-                    # Sicherer ist Keyword-Call, aber Streamlit Module sind meist position-based.
-                    # Wir machen es einfach: Wenn 4 Argumente verlangt werden, ist das 4. das Datum.
-                    if len(params) >= 4:
-                        module.render(kin_nr, full_data, DB_TZ, d_in)
-                    else:
-                        module.render(kin_nr, full_data, DB_TZ)
-                elif 'd_in' in params:
-                     module.render(kin_nr, full_data, DB_TZ, d_in)
-                else:
-                    # Fallback für Module ohne Datum (wie Navigator/Orakel)
-                    module.render(kin_nr, full_data, DB_TZ)
-                
-                # Eleganter Abstand
-                st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
-                
-            except Exception as e:
-                st.error(f"Fehler im Modul '{name}': {e}")
-                
-        # FOOTER
-        st.markdown("<div style='text-align:center; color:#333; margin-top:50px; font-size:0.7em;'>V22 OMNI STATION</div>", unsafe_allow_html=True)
+        return entry
+
+# ==============================================================================
+# 💾 DATEN-LOGISTIK (Caching & Loading)
+# ==============================================================================
+@st.cache_data
+def load_databases():
+    """Lädt die heiligen JSONs in den Speicher."""
+    try:
+        with open('db_tzolkin_v21_enriched_FINAL.json', 'r', encoding='utf-8') as f:
+            db_tzolkin = json.load(f)
+        with open('db_13moon_v22_enriched_FINAL.json', 'r', encoding='utf-8') as f:
+            db_13moon = json.load(f)
+        return db_tzolkin, db_13moon
+    except FileNotFoundError:
+        st.error("🚨 KRITISCHER FEHLER: Datenbanken nicht gefunden!")
+        return [], []
+
+# ==============================================================================
+# 🧩 UI-MODULE (Atomic & Data-First)
+# ==============================================================================
+
+def render_kin_header(kin_nr, tzolkin_data_entry):
+    """
+    Rendert die Haupt-Identität.
+    """
+    if kin_nr == 0:
+        st.markdown("<div class='glass-card' style='border-left: 4px solid #00FF66;'><h3>🌀 KIN 0: HUNAB KU</h3><p>Der Tag ist rein. Keine Zeit. Kein Raum.</p></div>", unsafe_allow_html=True)
+        return {"kin": 0, "name": "Hunab Ku"}
+
+    # Daten extrahieren
+    identity = tzolkin_data_entry['identity']
+    seal = identity['seal']
+    tone = identity['tone']
+    
+    # Farb-Mapping für CSS
+    color_map = {
+        "Rot": "#FF3E3E", "Weiß": "#E0E0E0", "Blau": "#2A8CFF", "Gelb": "#FFD700"
+    }
+    css_color = color_map.get(seal['color'], "#FFFFFF")
+
+    # 1. UI RENDER
+    st.markdown(f"""
+    <div class='glass-card' style='border-left: 5px solid {css_color};'>
+        <div class='subtext'>DESTINY KIN {kin_nr}</div>
+        <h2 style='margin:0; color:white;'>{identity['name']}</h2>
+        <div style='margin-top:5px; font-style:italic;'>"{seal['action']} um zu {seal['power']}..."</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. ATOMIC EXPANDER
+    with st.expander(f"👁️ Analyse: {seal['name']} & {tone['name']}"):
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown(f"**Siegel:** {seal['name']}")
+            st.caption(f"Essenz: {seal['essence']}")
+        with c2:
+            st.markdown(f"**Ton:** {tone['name']} ({tone['id']})")
+            st.caption(f"Kraft: {tone['power']}")
             
+        st.markdown("---")
+        st.write(f"**Affirmation:** Ich {seal['action']} um zu {seal['power']}, {seal['essence']} versiegelnd.")
+
+    # 3. EXPORT DATA RETURN
+    return {
+        "kin": kin_nr,
+        "name": identity['name'],
+        "seal": seal['name'],
+        "tone": tone['name']
+    }
+
+def render_moon_info(moon_entry):
+    """
+    Rendert die Raum-Zeit-Koordinaten (13 Monde).
+    """
+    if not moon_entry or "special" in moon_entry:
+        return {}
+
+    moon = moon_entry['moon']
+    plasma = moon_entry['plasma']
+    psi = moon_entry['psi_chrono']
+
+    # 1. UI RENDER
+    st.markdown(f"""
+    <div class='glass-card'>
+        <div class='subtext'>SYNCHRONOMETER</div>
+        <div style='display:flex; justify-content:space-between; align-items:center;'>
+            <div>
+                <h3 style='margin:0;'>{moon['name']}</h3>
+                <span class='highlight'>Tag {moon_entry['day_of_moon']}</span>
+            </div>
+            <div style='text-align:right;'>
+                <div style='font-size:0.8em;'>PSI-CHRONO</div>
+                <div style='font-weight:bold; color:#00FF66;'>KIN {psi}</div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 2. ATOMIC DETAILS
+    with st.expander("📍 Koordinaten-Details"):
+        st.write(f"**Plasma:** {plasma['name']} (Chakra: {plasma['chakra']})")
+        st.write(f"**Woche:** {moon_entry['week']}")
+        st.info(f"Psi-Chrono Einheit {psi} ist der Speicher-Chip für diesen Tag.")
+
+    # 3. EXPORT
+    return {
+        "moon": moon['name'],
+        "day": moon_entry['day_of_moon'],
+        "plasma": plasma['name'],
+        "psi_chrono": psi
+    }
+
+# ==============================================================================
+# 🚀 MAIN APP CONTROLLER
+# ==============================================================================
+def main():
+    inject_custom_css()
+    
+    # 1. HEADER
+    st.title("GALAXY SYNC V2.1")
+    st.markdown("---")
+
+    # 2. DATA LOAD
+    db_tzolkin, db_13moon = load_databases()
+    if not db_tzolkin: st.stop()
+
+    # 3. INPUT (SIDEBAR)
+    with st.sidebar:
+        st.header("⚙️ PARAMETER")
+        d_input = st.date_input("Datum wählen", datetime.date.today())
+        
+        # Quick Debug Stats
+        st.divider()
+        st.caption(f"DB Tzolkin: {len(db_tzolkin)} Einträge")
+        st.caption(f"DB 13Moon: {len(db_13moon)} Einträge")
+
+    # 4. ENGINE RUN (LOGIC)
+    # Strang A: Berechnen
+    kin_today = MathEngine.calculate_kin(d_input.day, d_input.month, d_input.year)
+    
+    # Strang B: Nachschlagen
+    moon_today = MoonEngine.get_moon_data(d_input.day, d_input.month, db_13moon)
+
+    # Daten holen (Safe Lookup -1 weil Liste 0-indiziert ist, Kin aber 1-basiert)
+    # Ausnahme: Kin 0
+    if kin_today > 0:
+        kin_data_full = db_tzolkin[kin_today - 1]
     else:
-        st.error("Kin Daten nicht gefunden.")
+        kin_data_full = None
+
+    # 5. RENDER UI (VIEW)
+    # Wir sammeln die Rückgabewerte für einen späteren Export
+    export_stack = {}
+
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.caption("DER ZEIT-VEKTOR (TZOLKIN)")
+        if kin_data_full:
+            data_a = render_kin_header(kin_today, kin_data_full)
+            export_stack.update(data_a)
+        else:
+            st.warning("Hunab Ku - Der Tag außerhalb der Zeit.")
+
+    with col2:
+        st.caption("DER RAUM-CONTAINER (13 MOON)")
+        if moon_today:
+            data_b = render_moon_info(moon_today)
+            export_stack.update(data_b)
+
+    # Hier können später weitere Module wie Orakel, Partner-Check etc. angehängt werden
+    # z.B. render_oracle(kin_today, db_tzolkin)
+
+    # 6. EXPORT PREVIEW (Nur für Devs sichtbar aktuell)
+    # with st.expander("🛠️ Developer Data-Dump"):
+    #     st.json(export_stack)
+
+if __name__ == "__main__":
+    main()
