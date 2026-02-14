@@ -1,9 +1,8 @@
 # ==============================================================================
-# 🛸 V21 HOST SYSTEM (Pro Infrastructure)
+# 🛸 V21 HOST SYSTEM (Ultimate Edition)
 # ------------------------------------------------------------------------------
 # ZWECK:    High-End Container für galaktische Module.
-# FEATURE:  Hot-Reload, Error-Containment, Performance-Metriken, Sci-Fi UI.
-# UPDATE:   High-Contrast Sidebar Fix.
+# UPDATES:  Fix für Datum-Lesbarkeit, Pulse-Inspector integriert.
 # ==============================================================================
 
 import streamlit as st
@@ -26,7 +25,7 @@ st.set_page_config(
 def inject_advanced_css():
     st.markdown("""
         <style>
-        /* --- FONTS IMPORTIEREN --- */
+        /* --- FONTS --- */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap');
 
         /* --- GLOBAL THEME --- */
@@ -36,44 +35,35 @@ def inject_advanced_css():
             font-family: 'Rajdhani', sans-serif;
         }
 
-        /* --- HEADINGS --- */
-        h1, h2, h3 {
-            font-family: 'Orbitron', sans-serif;
-            letter-spacing: 2px;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.2);
+        /* --- INPUT FIX (BRUTAL FORCE CONTRAST) --- */
+        /* Wir zwingen alle Eingabefelder auf hellen Hintergrund mit dunkler Schrift */
+        input {
+            background-color: #e0e0e0 !important; 
+            color: #000000 !important;
+            font-weight: bold !important;
+            border-radius: 4px !important;
+        }
+        /* Datum-Picker Icon */
+        div[data-baseweb="input"] {
+            background-color: #e0e0e0 !important;
+            border: 1px solid #fff !important;
+        }
+        /* Dropdown Menüs */
+        div[data-baseweb="select"] > div {
+            background-color: #222 !important;
+            color: #fff !important;
         }
 
-        /* --- SIDEBAR STYLE (High Contrast Fix) --- */
+        /* --- SIDEBAR STYLE --- */
         [data-testid="stSidebar"] {
-            background-color: #050505; /* Tiefes Schwarz */
+            background-color: #050505;
             border-right: 1px solid #333;
         }
-        
-        /* Zwingt alle Texte in der Sidebar auf Weiß/Hellgrau */
-        [data-testid="stSidebar"] h1, 
-        [data-testid="stSidebar"] h2, 
-        [data-testid="stSidebar"] h3, 
-        [data-testid="stSidebar"] span, 
-        [data-testid="stSidebar"] label,
-        [data-testid="stSidebar"] div {
-            color: #d0d0d0 !important;
+        [data-testid="stSidebar"] h1, [data-testid="stSidebar"] h2, [data-testid="stSidebar"] h3, [data-testid="stSidebar"] label {
+            color: #eeeeee !important;
         }
         
-        /* Überschriften in der Sidebar hervorheben */
-        [data-testid="stSidebar"] h2 {
-            color: #2A8CFF !important; /* Neon Blau für Headlines */
-        }
-
-        /* Eingabefelder (Datum, Select) dunkler machen */
-        div[data-baseweb="select"] > div,
-        div[data-baseweb="input"] > div {
-            background-color: #1a1a20 !important;
-            color: white !important;
-            border: 1px solid #444 !important;
-        }
-
-        /* --- CONTAINER STYLE (Standard für Module) --- */
+        /* --- MODULE CONTAINER --- */
         .glass-container {
             background: rgba(15, 15, 20, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.08);
@@ -82,82 +72,48 @@ def inject_advanced_css():
             border-radius: 12px;
             padding: 20px;
             margin-bottom: 20px;
-            transition: all 0.3s ease;
         }
-        .glass-container:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 15px rgba(42, 140, 255, 0.1);
-        }
-
-        /* --- UTILS --- */
-        .debug-info { font-family: monospace; font-size: 0.7rem; color: #555; }
-        .error-box { border: 1px solid #ff4b4b; background: rgba(50,0,0,0.5); padding: 10px; border-radius: 8px; }
+        
+        /* --- ERROR BOX --- */
+        .error-box { border: 1px solid #ff4b4b; background: rgba(50,0,0,0.5); }
         </style>
     """, unsafe_allow_html=True)
 
-# 3. MODUL MANAGER (Die Infrastruktur)
+# 3. INFRASTRUKTUR
 def get_available_modules():
-    """Scannt den Ordner und gibt saubere Namen zurück."""
     if not os.path.exists("modules"):
         os.makedirs("modules")
         return []
     
     files = [f[:-3] for f in os.listdir("modules") if f.startswith("mod_") and f.endswith(".py")]
     
-    # Sortierung: Header immer zuerst, Dashboard als zweites (wenn vorhanden)
+    # Sortierung: Header & Dashboard zuerst
     priority = ["mod_header", "mod_dashboard"]
-    sorted_files = []
-    
-    # Priorisierte zuerst hinzufügen
-    for p in priority:
-        if p in files:
-            sorted_files.append(p)
-            files.remove(p)
-            
-    # Den Rest anhängen
-    sorted_files.extend(files)
+    sorted_files = [p for p in priority if p in files] + [f for f in files if f not in priority]
     
     return sorted_files
 
 def run_module_safely(mod_name, pulse, debug_mode):
-    """Führt ein Modul in einer isolierten Sandbox aus."""
-    placeholder = st.empty()
-    
     try:
-        # Performance Tracking Start
         start_time = time.time()
-        
-        # 1. Import / Reload
         module_path = f"modules.{mod_name}"
         
         if module_path in sys.modules:
             module = importlib.import_module(module_path)
-            importlib.reload(module) # Hot-Reload für Live-Coding!
+            importlib.reload(module)
         else:
             module = importlib.import_module(module_path)
         
-        # 2. Render Check
         if hasattr(module, "render"):
-            # Der Render-Aufruf
             module.render(pulse)
-            
-            # Performance Tracking Ende
             duration = (time.time() - start_time) * 1000
             if debug_mode:
-                st.markdown(f"<div class='debug-info'>[SYS] {mod_name} geladen in {duration:.1f}ms</div>", unsafe_allow_html=True)
+                st.caption(f"⏱️ [SYS] {mod_name}: {duration:.1f}ms")
         else:
-            st.warning(f"⚠️ Modul '{mod_name}' hat keine render()-Funktion.")
+            st.error(f"⚠️ {mod_name}: Keine render()-Funktion!")
 
     except Exception as e:
-        # Crash Containment: Zeige den Fehler schön an, statt App-Crash
-        st.markdown(f"""
-            <div class='glass-container error-box'>
-                <h4 style='color:#ff4b4b'>💥 System Failure: {mod_name}</h4>
-                <p>{str(e)}</p>
-            </div>
-        """, unsafe_allow_html=True)
-        if debug_mode:
-            st.exception(e)
+        st.markdown(f"<div class='glass-container error-box'><h4>💥 Crash: {mod_name}</h4><p>{e}</p></div>", unsafe_allow_html=True)
 
 # ------------------------------------------------------------------------------
 # 4. MAIN COCKPIT
@@ -165,59 +121,45 @@ def run_module_safely(mod_name, pulse, debug_mode):
 def main():
     inject_advanced_css()
 
-    # --- SIDEBAR: MISSION CONTROL ---
     with st.sidebar:
         st.header("🛸 V21 MISSION CONTROL")
         
-        # A. Navigation
         st.subheader("1. Zeit-Koordinate")
-        target_date = st.date_input(
-            "Datumssprung", 
-            datetime.date.today(),
-            min_value=datetime.date(1700, 1, 1),
-            max_value=datetime.date(2300, 12, 31)
-        )
+        # Datumseingabe - jetzt lesbar!
+        target_date = st.date_input("Datum wählen", datetime.date.today(), 
+                                    min_value=datetime.date(1700, 1, 1), 
+                                    max_value=datetime.date(2300, 12, 31))
         
         st.divider()
         
-        # B. Modul Sequencer
-        st.subheader("2. Modul-Sequenz")
-        available_mods = get_available_modules()
-        
-        if not available_mods:
-            st.error("Keine Module in /modules gefunden!")
-        
-        active_mods = st.multiselect(
-            "Systeme aktivieren", 
-            options=available_mods, 
-            default=available_mods
-        )
+        st.subheader("2. Module")
+        avail = get_available_modules()
+        active_mods = st.multiselect("Aktivierte Systeme", options=avail, default=avail)
         
         st.divider()
 
-        # C. System Diagnostics
-        st.subheader("3. Core Diagnostics")
+        st.subheader("3. System-Kern")
         debug_mode = st.toggle("Ingenieur-Modus (Debug)", value=False)
         
-        if st.button("♻️ CACHE LEEREN & RELOAD"):
+        if st.button("♻️ RELOAD ALL"):
             st.cache_data.clear()
             st.rerun()
 
-        # Footer
-        st.divider()
-        st.caption("Hunab Ku 21 | Version Alpha 1.5 Pro")
-
-    # --- ENGINE START ---
-    with st.spinner("Synchronisiere mit Noosphäre..."):
+    # --- ENGINE ---
+    with st.spinner("Lade Daten-Puls..."):
         pulse = GalacticCore.get_pulse(target_date)
-
-    # --- DATA INJECTION (Optionaler Header im Debug Mode) ---
-    if debug_mode:
-        st.info(f"🧬 KIN {pulse['metadata']['kin']} | PSI {pulse['moon'].get('psi_chrono', '?')} | {pulse['metadata']['date_str']}")
 
     # --- RENDER PIPELINE ---
     for mod_name in active_mods:
         run_module_safely(mod_name, pulse, debug_mode)
+        
+    # --- PULSE INSPECTOR (Integriert!) ---
+    # Das wolltest du sehen: Den nackten Puls.
+    if debug_mode:
+        st.markdown("---")
+        st.subheader("🔍 Core Pulse Inspector")
+        with st.expander("JSON Datenstrom ansehen (Raw Pulse)", expanded=True):
+            st.json(pulse)
 
 if __name__ == "__main__":
     main()
