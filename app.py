@@ -3,6 +3,7 @@
 # ------------------------------------------------------------------------------
 # ZWECK:    High-End Container für galaktische Module.
 # FEATURE:  Hot-Reload, Error-Containment, Performance-Metriken, Sci-Fi UI.
+# UPDATE:   High-Contrast Sidebar Fix.
 # ==============================================================================
 
 import streamlit as st
@@ -43,10 +44,33 @@ def inject_advanced_css():
             text-shadow: 0 0 10px rgba(255,255,255,0.2);
         }
 
-        /* --- SIDEBAR STYLE --- */
+        /* --- SIDEBAR STYLE (High Contrast Fix) --- */
         [data-testid="stSidebar"] {
-            background-color: #0b0b10;
+            background-color: #050505; /* Tiefes Schwarz */
             border-right: 1px solid #333;
+        }
+        
+        /* Zwingt alle Texte in der Sidebar auf Weiß/Hellgrau */
+        [data-testid="stSidebar"] h1, 
+        [data-testid="stSidebar"] h2, 
+        [data-testid="stSidebar"] h3, 
+        [data-testid="stSidebar"] span, 
+        [data-testid="stSidebar"] label,
+        [data-testid="stSidebar"] div {
+            color: #d0d0d0 !important;
+        }
+        
+        /* Überschriften in der Sidebar hervorheben */
+        [data-testid="stSidebar"] h2 {
+            color: #2A8CFF !important; /* Neon Blau für Headlines */
+        }
+
+        /* Eingabefelder (Datum, Select) dunkler machen */
+        div[data-baseweb="select"] > div,
+        div[data-baseweb="input"] > div {
+            background-color: #1a1a20 !important;
+            color: white !important;
+            border: 1px solid #444 !important;
         }
 
         /* --- CONTAINER STYLE (Standard für Module) --- */
@@ -79,11 +103,21 @@ def get_available_modules():
         return []
     
     files = [f[:-3] for f in os.listdir("modules") if f.startswith("mod_") and f.endswith(".py")]
-    # Sortierung: Header immer zuerst, wenn vorhanden
-    if "mod_header" in files:
-        files.remove("mod_header")
-        files.insert(0, "mod_header")
-    return files
+    
+    # Sortierung: Header immer zuerst, Dashboard als zweites (wenn vorhanden)
+    priority = ["mod_header", "mod_dashboard"]
+    sorted_files = []
+    
+    # Priorisierte zuerst hinzufügen
+    for p in priority:
+        if p in files:
+            sorted_files.append(p)
+            files.remove(p)
+            
+    # Den Rest anhängen
+    sorted_files.extend(files)
+    
+    return sorted_files
 
 def run_module_safely(mod_name, pulse, debug_mode):
     """Führt ein Modul in einer isolierten Sandbox aus."""
@@ -174,7 +208,6 @@ def main():
         st.caption("Hunab Ku 21 | Version Alpha 1.5 Pro")
 
     # --- ENGINE START ---
-    # Ladeanimation nur wenn nicht gecached
     with st.spinner("Synchronisiere mit Noosphäre..."):
         pulse = GalacticCore.get_pulse(target_date)
 
@@ -183,7 +216,6 @@ def main():
         st.info(f"🧬 KIN {pulse['metadata']['kin']} | PSI {pulse['moon'].get('psi_chrono', '?')} | {pulse['metadata']['date_str']}")
 
     # --- RENDER PIPELINE ---
-    # Hier laufen die Module durch die Sicherheits-Schleuse
     for mod_name in active_mods:
         run_module_safely(mod_name, pulse, debug_mode)
 
